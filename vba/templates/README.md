@@ -6,6 +6,17 @@
 
 このファイルは、楽天証券MarketSpeed2のRSS APIを使用して株価データを取得し、CSV形式で出力するVBAアプリケーションです。
 
+## ⚠️ 重要：文字化け対策
+
+**VBAファイルをインポートする際は、必ず `vba/src-sjis/` フォルダのファイルを使用してください！**
+
+```
+❌ vba/src/     - UTF-8版（文字化けする）
+✅ vba/src-sjis/ - Shift_JIS版（文字化けしない）⭐
+```
+
+詳細は `vba/ENCODING_GUIDE.md` を参照してください。
+
 ## セットアップ手順
 
 ### 1. 前提条件確認
@@ -25,25 +36,36 @@ vba/
 ├── templates/
 │   ├── StockDataCollector.xlsm    # ← メインファイル
 │   └── README.md                  # ← このファイル
-├── src/                           # VBAソースコード
-└── tests/                         # テスト用データ
+├── src/                           # VBAソースコード（UTF-8版）
+├── src-sjis/                      # VBAソースコード（Shift_JIS版）⭐
+├── tests/                         # テスト用データ
+└── ENCODING_GUIDE.md              # エンコーディングガイド
 ```
 
-### 3. VBAモジュールの組み込み
+### 3. VBAモジュールの組み込み（重要：文字化け対策）
+
+**必ず `src-sjis/` フォルダからインポートしてください！**
 
 `StockDataCollector.xlsm`を作成し、以下のVBAコンポーネントを組み込みます：
 
+#### ⭐ インポート元フォルダ
+```
+vba/src-sjis/  ← このフォルダからインポート（文字化けしない）
+```
+
 #### モジュール（.bas）
+- **MainModule.bas** - ShowMainForm()実装
+- **WorksheetMacros.bas** - ワークシートボタン用マクロ  
 - **DataCollector.bas** - データ取得エンジン
 - **CSVExporter.bas** - CSV出力機能
 - **Utils.bas** - ユーティリティ・ログ機能
 
 #### ユーザーフォーム（.frm）
-- **MainForm.frm** - メインユーザーインターフェース
+- **MainForm.frm** - メインGUIフォーム
 
 #### クラスモジュール（.cls）
-- **StockData.cls** - 株価データ構造
-- **Configuration.cls** - 設定管理
+- **StockData.cls** - 株価データ構造クラス
+- **Configuration.cls** - 設定管理クラス
 
 ### 4. 参照設定の追加
 
@@ -51,92 +73,155 @@ VBAエディタ（Alt+F11）で「ツール」→「参照設定」を開き、�
 
 - [ ] Microsoft Office 16.0 Object Library
 - [ ] Microsoft Forms 2.0 Object Library  
-- [ ] Microsoft Scripting Runtime
+- [ ] Microsoft Windows Common Controls 6.0 (SP6)
+- [ ] Microsoft Windows Common Controls-2 6.0 (SP6)
+
+### 5. 詳細なインポート手順
+
+#### Step 1: VBAエディタを開く
+1. Excelで新しいブックを作成
+2. `StockDataCollector.xlsm` として保存（マクロ有効ブック）
+3. `Alt + F11` でVBAエディタを開く
+
+#### Step 2: 参照設定
+1. 「ツール」→「参照設定」
+2. 上記の4つの参照ライブラリを有効化
+
+#### Step 3: モジュールインポート（重要）
+1. プロジェクトエクスプローラーで右クリック
+2. 「ファイルのインポート」を選択
+3. **`vba/src-sjis/modules/`** から以下を順番にインポート：
+   ```
+   MainModule.bas         ⭐ ShowMainForm()含む
+   WorksheetMacros.bas    ⭐ ボタン用マクロ
+   DataCollector.bas
+   CSVExporter.bas
+   Utils.bas
+   ```
+
+#### Step 4: フォームインポート
+1. 「ファイルのインポート」
+2. **`vba/src-sjis/forms/MainForm.frm`** をインポート
+
+#### Step 5: クラスモジュールインポート
+1. 「ファイルのインポート」
+2. **`vba/src-sjis/classes/`** から以下をインポート：
+   ```
+   StockData.cls
+   Configuration.cls
+   ```
+
+#### Step 6: 文字化け確認
+インポート後、以下を確認：
+- ✅ 日本語コメントが正しく表示される
+- ✅ 関数名・変数名が正しく表示される
+- ✅ 文字列リテラルが正しく表示される
+
+**文字化けした場合は `vba/ENCODING_GUIDE.md` を参照してください。**
 
 ## ワークシート構成
 
 ### Sheet1: メイン画面
 
-- **A1**: タイトル "楽天MS2RSS株価データコレクター"
-- **A3**: "データ収集開始" ボタン（MainFormを表示）
-- **A5-A10**: 簡単な使用方法説明
-- **A12-A20**: 最近の実行ログ表示エリア
+```
+A1: 楽天MS2RSS株価データコレクター v1.0
 
-### Sheet2: 設定画面
+A3: [データ収集開始] ← StartDataCollection マクロ
+A5: [クイックテスト] ← RunQuickTest マクロ  
+A7: [接続テスト] ← TestConnection マクロ
+A9: [設定表示] ← DisplaySettings マクロ
+A11: [ヘルプ] ← ShowHelp マクロ
 
-- **A1-B10**: 基本設定項目
-  - B1: デフォルト足種
-  - B2: デフォルト出力パス
-  - B3: ログレベル
-  - B4: 最大取得本数
-  - B5: CSV小数点桁数
+C3: [出力フォルダを開く] ← OpenOutputFolder マクロ
+C5: [ログフォルダを開く] ← OpenLogFolder マクロ
+C7: [バージョン情報] ← AboutApp マクロ
+C9: [マクロ一覧] ← ShowMacroList マクロ
+```
 
-### Sheet3: テスト用
+### ボタンとマクロの対応表
 
-- **A1-F100**: テスト用データ表示エリア
-- RSS関数のテスト実行用
+| ボタン名 | マクロ名 | 機能 |
+|----------|----------|------|
+| **データ収集開始** | `StartDataCollection` | メインGUIを表示 |
+| **クイックテスト** | `RunQuickTest` | 接続・データ取得テスト |
+| **接続テスト** | `TestConnection` | MarketSpeed2接続確認 |
+| **設定表示** | `DisplaySettings` | 現在の設定を表示 |
+| **ヘルプ** | `ShowHelp` | 使用方法を表示 |
+| **出力フォルダを開く** | `OpenOutputFolder` | CSVファイル保存場所 |
+| **ログフォルダを開く** | `OpenLogFolder` | ログファイル保存場所 |
+| **バージョン情報** | `AboutApp` | アプリ情報表示 |
 
-## ボタンとマクロ
+### ボタンの作成方法
 
-### メインボタン
+1. 「開発」タブ→「挿入」→「ボタン (フォーム コントロール)」
+2. ワークシート上でボタンを描画
+3. 「マクロの登録」ダイアログで対応するマクロを選択
+4. ボタンのテキストを設定
 
-1. **データ収集開始** (`ShowMainForm`)
-   - MainFormを表示してGUIによるデータ収集を開始
+## 基本的な使用方法
 
-2. **設定画面** (`ShowConfigForm`)
-   - 設定画面を表示（将来実装予定）
-
-3. **ログ表示** (`ShowLogViewer`)
-   - ログファイルの内容を表示
-
-4. **テスト実行** (`RunTest`)
-   - 接続テストとサンプルデータ取得
-
-### サンプルマクロ
-
+### 1. GUIでのデータ収集
 ```vba
-' メインフォーム表示
-Sub ShowMainForm()
-    MainForm.Show
+' メインフォームを表示
+Sub Test_ShowMainForm()
+    Call ShowMainForm
 End Sub
+```
 
-' 簡単テスト
-Sub QuickTest()
+### 2. クイックテスト実行
+```vba
+' 接続とデータ取得のテスト
+Sub Test_QuickTest()
+    Call QuickTest
+End Sub
+```
+
+### 3. プログラムからの直接実行
+```vba
+Sub Test_DirectCall()
     Dim result As Boolean
-    result = CollectStockData("7203", "5M", Date-1, Date)
+    
+    ' トヨタ自動車の5分足データを1週間分取得
+    result = CollectStockData("7203", "5M", Date-7, Date)
+    
     If result Then
-        MsgBox "テスト成功"
+        MsgBox "データ取得成功"
     Else
-        MsgBox "テスト失敗"
+        MsgBox "データ取得失敗"
     End If
 End Sub
+```
 
-' 設定表示
-Sub ShowCurrentConfig()
-    Dim config As Configuration
-    Set config = New Configuration
-    config.LoadFromFile
-    MsgBox config.ToString()
-    Set config = Nothing
+### 4. 複数銘柄の一括取得
+```vba
+Sub Test_MultiplStocks()
+    Dim result As Boolean
+    
+    ' 複数銘柄を一括取得
+    result = CollectMultipleStocks("7203,6758,9984", "1M", Date-1, Date)
+    
+    If result Then
+        MsgBox "全銘柄取得成功"
+    End If
 End Sub
 ```
 
 ## データ取得の流れ
 
-### 1. 手動実行
+### 1. 手動実行（推奨）
 
 1. `StockDataCollector.xlsm`を開く
 2. 「データ収集開始」ボタンをクリック
 3. MainFormで設定を入力：
-   - 銘柄コード（例：7203,6758,9984）
-   - 取得期間（開始日〜終了日）
-   - 足種（1M, 5M, 15M, 30M, 60M, D）
-   - 出力先フォルダ
+   - **銘柄コード**：7203,6758,9984 など
+   - **取得期間**：開始日〜終了日
+   - **足種**：1M, 5M, 15M, 30M, 60M, D
+   - **出力先フォルダ**：CSVファイル保存場所
 4. 「実行」ボタンでデータ取得開始
 5. 進捗を確認し、完了まで待機
 6. 指定フォルダにCSVファイルが出力される
 
-### 2. プログラム実行
+### 2. プログラム自動実行
 
 ```vba
 Sub AutoCollectData()
@@ -153,20 +238,44 @@ Sub AutoCollectData()
 End Sub
 ```
 
+## 主要関数リファレンス
+
+### ShowMainForm()
+メインGUIフォームを表示してデータ収集を開始
+
+### CollectStockData(stockCode, timeFrame, startDate, endDate)
+- **stockCode**: 銘柄コード（"7203", "7203.T" など）
+- **timeFrame**: 足種（"1M", "5M", "15M", "30M", "60M", "D"）
+- **startDate**: 開始日
+- **endDate**: 終了日
+- **戻り値**: Boolean（成功時True）
+
+### CollectMultipleStocks(stockCodes, timeFrame, startDate, endDate)
+複数銘柄の一括データ取得
+- **stockCodes**: カンマ区切りの銘柄コード（"7203,6758,9984"）
+
 ## エラー対処法
 
 ### よくあるエラー
 
-1. **「MarketSpeed2に接続できません」**
+1. **「文字化けしています」**
+   - **原因**: UTF-8版ファイルをインポートした
+   - **対処**: `vba/src-sjis/` フォルダからインポートし直す
+
+2. **「MarketSpeed2に接続できません」**
    - MarketSpeed2を起動
    - RSS機能を有効化
    - 接続状態を確認
 
-2. **「ファイルが保存できません」**
+3. **「ShowMainFormが見つかりません」**
+   - `MainModule.bas` がインポートされているか確認
+   - 参照設定が正しいか確認
+
+4. **「ファイルが保存できません」**
    - 出力フォルダの書き込み権限を確認
    - ファイルが開かれていないか確認
 
-3. **「無効な銘柄コードです」**
+5. **「無効な銘柄コードです」**
    - 4桁または5桁の数字で入力
    - 市場コード（.T, .JAX等）を確認
 
@@ -176,6 +285,34 @@ End Sub
 2. **F8** でステップ実行
 3. **F9** でブレークポイント設定
 4. ログファイル（`output/logs/`）を確認
+
+### 接続テスト
+
+```vba
+Sub TestMS2Connection()
+    Call TestConnection()
+End Sub
+```
+
+## 出力データ形式
+
+### CSV形式
+
+```csv
+DateTime,Open,High,Low,Close,Volume
+2025-01-16 09:00:00,2500,2520,2495,2510,150000
+2025-01-16 09:01:00,2510,2525,2505,2520,120000
+```
+
+### ファイル名形式
+
+```
+{銘柄コード}_{足種}_{開始日}-{終了日}.csv
+
+例：
+7203_5M_20250101-20250131.csv
+6758_1M_20250115-20250116.csv
+```
 
 ## カスタマイズ
 
@@ -228,7 +365,7 @@ CSVExporter.basを修正して出力形式を変更：
 ```vba
 ' ファイルバージョン管理
 Const APP_VERSION As String = "1.0.0"
-Const BUILD_DATE As String = "2025-01-14"
+Const BUILD_DATE As String = "2025-01-16"
 
 Sub ShowVersion()
     MsgBox "楽天MS2RSS株価データコレクター" & vbCrLf & _
@@ -239,10 +376,33 @@ End Sub
 
 ## サポート・問い合わせ
 
+### ドキュメント
+
+- **VBA詳細ガイド**: `docs/vba-guide.md`
+- **エンコーディングガイド**: `vba/ENCODING_GUIDE.md`
+- **API仕様**: `docs/ms2rss/function-reference.md`
+
+### 問い合わせ
+
 技術的な問題やご質問は、GitHubのIssuesページまでお願いします：
 
-https://github.com/tsubokazu/rakuten-ms2rss-collector/issues
+**https://github.com/tsubokazu/rakuten-ms2rss-collector/issues**
+
+### よくある質問
+
+1. **Q: 文字化けします**
+   - A: `vba/src-sjis/` フォルダからインポートしてください
+
+2. **Q: ShowMainFormが動きません**
+   - A: `MainModule.bas` をインポートしてください
+
+3. **Q: データが取得できません**
+   - A: MarketSpeed2のRSS機能を確認してください
 
 ## ライセンス
 
 MIT License - 詳細はプロジェクトルートのLICENSEファイルを参照
+
+## 免責事項
+
+このソフトウェアは教育・研究目的で提供されています。投資判断や取引結果について、開発者は一切の責任を負いません。ご自身の責任でご利用ください。
