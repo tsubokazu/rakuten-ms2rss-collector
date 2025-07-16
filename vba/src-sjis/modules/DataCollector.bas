@@ -33,17 +33,27 @@ Public Function CollectStockData(stockCode As String, timeFrame As String, _
         Exit Function
     End If
     
-    ' For demonstration purposes, return success without actual API call
-    ' In real implementation, RSS Chart API would be called here
-    Debug.Print "Test mode: Data collection simulation for " & stockCode
+    ' Calculate required data points based on date range and timeframe
+    Dim daysDiff As Long
+    Dim dataPoints As Long
+    
+    daysDiff = DateDiff("d", startDate, endDate) + 1
+    dataPoints = CalculateDataPoints(daysDiff, timeFrame)
+    
+    Debug.Print "Data collection for " & stockCode & ": " & dataPoints & " points needed for " & daysDiff & " days"
+    
+    ' Note: RSS Chart API limitations
+    ' - RssChart: Gets latest N points (no date range)
+    ' - RssChartPast: Gets N points from specific start date
+    ' For this demo, we'll generate sample data reflecting the actual date range
     
     ' Generate sample output path if not specified
     If outputPath = "" Then
         outputPath = GenerateOutputFilename(stockCode, timeFrame, startDate, endDate)
     End If
     
-    ' Create sample CSV file
-    result = CreateSampleCSVFile(outputPath, stockCode)
+    ' Create sample CSV file with proper date range
+    result = CreateSampleCSVFileWithDateRange(outputPath, stockCode, timeFrame, startDate, endDate, dataPoints)
     
     If result Then
         Debug.Print "Data collection complete: " & outputPath
@@ -195,4 +205,110 @@ Public Function CollectMultipleStocks(stockCodes As String, timeFrame As String,
 ErrorHandler:
     Debug.Print "CollectMultipleStocks Error: " & Err.Description
     CollectMultipleStocks = False
+End Function
+
+' Calculate expected data points based on timeframe and days
+Private Function CalculateDataPoints(days As Long, timeFrame As String) As Long
+    Dim pointsPerDay As Long
+    
+    Select Case UCase(timeFrame)
+        Case "1M": pointsPerDay = 480    ' 8 hours * 60 minutes (market hours)
+        Case "5M": pointsPerDay = 96     ' 8 hours * 12 (5-minute intervals)
+        Case "15M": pointsPerDay = 32    ' 8 hours * 4 (15-minute intervals)
+        Case "30M": pointsPerDay = 16    ' 8 hours * 2 (30-minute intervals)
+        Case "60M": pointsPerDay = 8     ' 8 hours (hourly)
+        Case "D": pointsPerDay = 1       ' Daily
+        Case Else: pointsPerDay = 96     ' Default to 5M
+    End Select
+    
+    CalculateDataPoints = days * pointsPerDay
+End Function
+
+' Create sample CSV file with proper date range
+Private Function CreateSampleCSVFileWithDateRange(filePath As String, stockCode As String, _
+                                                 timeFrame As String, startDate As Date, _
+                                                 endDate As Date, dataPoints As Long) As Boolean
+    On Error GoTo ErrorHandler
+    
+    Dim fileNum As Integer
+    Dim csvContent As String
+    Dim i As Long
+    Dim basePrice As Double
+    Dim currentDateTime As Date
+    Dim minuteInterval As Long
+    
+    ' Determine minute interval based on timeframe
+    Select Case UCase(timeFrame)
+        Case "1M": minuteInterval = 1
+        Case "5M": minuteInterval = 5
+        Case "15M": minuteInterval = 15
+        Case "30M": minuteInterval = 30
+        Case "60M": minuteInterval = 60
+        Case "D": minuteInterval = 1440  ' 24 hours in minutes
+        Case Else: minuteInterval = 5    ' Default to 5M
+    End Select
+    
+    ' Generate sample data
+    basePrice = 2500 + (Rnd() * 100) ' Random base price around 2500
+    csvContent = "DateTime,Open,High,Low,Close,Volume" & vbCrLf
+    
+    ' Start from the beginning of the start date
+    currentDateTime = startDate + TimeValue("09:00:00") ' Market opens at 9:00
+    
+    ' Generate data points within the specified date range
+    For i = 1 To dataPoints
+        ' Skip weekends for daily data
+        If timeFrame = "D" And (Weekday(currentDateTime) = 1 Or Weekday(currentDateTime) = 7) Then
+            currentDateTime = currentDateTime + minuteInterval / 1440
+            GoTo NextIteration
+        End If
+        
+        ' Stop if we've passed the end date
+        If currentDateTime > endDate + TimeValue("15:00:00") Then Exit For
+        
+        ' Generate realistic OHLCV data
+        Dim openPrice As Double, highPrice As Double, lowPrice As Double, closePrice As Double
+        Dim volume As Long
+        
+        openPrice = basePrice + (Rnd() - 0.5) * 50
+        highPrice = openPrice + Rnd() * 30
+        lowPrice = openPrice - Rnd() * 30
+        closePrice = openPrice + (Rnd() - 0.5) * 40
+        volume = Int(Rnd() * 100000) + 50000
+        
+        ' Update base price for next iteration (trend simulation)
+        basePrice = closePrice + (Rnd() - 0.5) * 10
+        
+        csvContent = csvContent & _
+            Format(currentDateTime, "YYYY/MM/DD HH:MM") & "," & _
+            Format(openPrice, "0.00") & "," & _
+            Format(highPrice, "0.00") & "," & _
+            Format(lowPrice, "0.00") & "," & _
+            Format(closePrice, "0.00") & "," & _
+            volume & vbCrLf
+        
+NextIteration:
+        ' Advance time
+        currentDateTime = currentDateTime + minuteInterval / 1440  ' Convert minutes to days
+        
+        ' Skip to next trading day if we're past market hours
+        If TimeValue(Format(currentDateTime, "HH:MM:SS")) > TimeValue("15:00:00") Then
+            currentDateTime = Int(currentDateTime) + 1 + TimeValue("09:00:00")
+        End If
+    Next i
+    
+    ' Save to file
+    fileNum = FreeFile
+    Open filePath For Output As #fileNum
+    Print #fileNum, csvContent;
+    Close #fileNum
+    
+    Debug.Print "Generated " & (i - 1) & " data points for period " & Format(startDate, "YYYY/MM/DD") & " to " & Format(endDate, "YYYY/MM/DD")
+    CreateSampleCSVFileWithDateRange = True
+    Exit Function
+    
+ErrorHandler:
+    If fileNum > 0 Then Close #fileNum
+    Debug.Print "CreateSampleCSVFileWithDateRange Error: " & Err.Description
+    CreateSampleCSVFileWithDateRange = False
 End Function
