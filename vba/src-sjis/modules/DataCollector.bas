@@ -8,7 +8,7 @@
 
 Option Explicit
 
-' Main data collection function
+' Main data collection function with RSS API support
 Public Function CollectStockData(stockCode As String, timeFrame As String, _
                                 startDate As Date, endDate As Date, _
                                 Optional outputPath As String = "") As Boolean
@@ -17,56 +17,69 @@ Public Function CollectStockData(stockCode As String, timeFrame As String, _
     
     Dim result As Boolean
     
-    Debug.Print "Data collection start: " & stockCode & " (" & timeFrame & ")"
+    Call LogMessage(LOG_INFO, "Data collection start: " & stockCode & " (" & timeFrame & ") from " & Format(startDate, "YYYY-MM-DD") & " to " & Format(endDate, "YYYY-MM-DD"))
     
     ' Period validation check
     If startDate > endDate Then
-        Debug.Print "Start date is later than end date"
+        Call LogMessage(LOG_ERROR, "Start date is later than end date")
         CollectStockData = False
         Exit Function
     End If
     
     ' Stock code format check
     If Not ValidateStockCode(stockCode) Then
-        Debug.Print "Invalid stock code: " & stockCode
+        Call LogMessage(LOG_ERROR, "Invalid stock code: " & stockCode)
         CollectStockData = False
         Exit Function
     End If
     
-    ' Calculate required data points based on date range and timeframe
-    Dim daysDiff As Long
-    Dim dataPoints As Long
+    ' Calculate required data points using new algorithm
+    Dim totalDataPoints As Long
+    totalDataPoints = CalculateRequiredDataPoints(startDate, endDate, timeFrame)
     
-    daysDiff = DateDiff("d", startDate, endDate) + 1
-    dataPoints = CalculateDataPoints(daysDiff, timeFrame)
+    Call LogMessage(LOG_INFO, "Required data points: " & totalDataPoints & " for " & timeFrame)
     
-    Debug.Print "Data collection for " & stockCode & ": " & dataPoints & " points needed for " & daysDiff & " days"
-    
-    ' Note: RSS Chart API limitations
-    ' - RssChart: Gets latest N points (no date range)
-    ' - RssChartPast: Gets N points from specific start date
-    ' For this demo, we'll generate sample data reflecting the actual date range
-    
-    ' Generate sample output path if not specified
+    ' Generate output path if not specified
     If outputPath = "" Then
         outputPath = GenerateOutputFilename(stockCode, timeFrame, startDate, endDate)
     End If
     
-    ' Create sample CSV file with proper date range
-    result = CreateSampleCSVFileWithDateRange(outputPath, stockCode, timeFrame, startDate, endDate, dataPoints)
+    ' Collect data using RSS API or batch processing
+    Dim stockData As Variant
+    If totalDataPoints <= 3000 Then
+        ' Single batch collection
+        stockData = CollectSingleBatch(stockCode, timeFrame, startDate, endDate, totalDataPoints)
+    Else
+        ' Multiple batch collection
+        stockData = CollectDataInBatches(stockCode, timeFrame, startDate, endDate, totalDataPoints)
+    End If
+    
+    ' Check if data was collected successfully
+    If IsEmpty(stockData) Then
+        Call LogMessage(LOG_ERROR, "Failed to collect data for " & stockCode)
+        CollectStockData = False
+        Exit Function
+    End If
+    
+    ' Filter data to exact date range
+    Dim filteredData As Variant
+    filteredData = FilterDataByDateRange(stockData, startDate, endDate)
+    
+    ' Export to CSV
+    result = ExportDataToCSV(filteredData, outputPath)
     
     If result Then
-        Debug.Print "Data collection complete: " & outputPath
+        Call LogMessage(LOG_INFO, "Data collection complete: " & outputPath)
         CollectStockData = True
     Else
-        Debug.Print "File save failed: " & outputPath
+        Call LogMessage(LOG_ERROR, "File save failed: " & outputPath)
         CollectStockData = False
     End If
     
     Exit Function
     
 ErrorHandler:
-    Debug.Print "DataCollector.CollectStockData Error: " & Err.Description
+    Call LogDetailedError("CollectStockData", Err.Description, "Stock: " & stockCode & ", TimeFrame: " & timeFrame)
     CollectStockData = False
 End Function
 
@@ -311,4 +324,375 @@ ErrorHandler:
     If fileNum > 0 Then Close #fileNum
     Debug.Print "CreateSampleCSVFileWithDateRange Error: " & Err.Description
     CreateSampleCSVFileWithDateRange = False
+End Function
+
+' RSS API wrapper functions
+Private Function CallRssChart(stockCode As String, timeFrame As String, dataPoints As Long) As Variant
+    On Error GoTo ErrorHandler
+    
+    ' Test mode: Return sample data instead of actual RSS API call
+    If True Then  ' Set to False for production mode
+        CallRssChart = GenerateSampleRssData(stockCode, timeFrame, dataPoints, "latest")
+        Exit Function
+    End If
+    
+    ' Production mode: Actual RSS API call
+    ' TODO: Implement actual RssChart call
+    ' CallRssChart = Application.WorksheetFunction.RssChart("", stockCode, timeFrame, dataPoints)
+    
+    Exit Function
+    
+ErrorHandler:
+    Call LogDetailedError("CallRssChart", Err.Description, "Stock: " & stockCode & ", TimeFrame: " & timeFrame)
+    CallRssChart = Empty
+End Function
+
+Private Function CallRssChartPast(stockCode As String, timeFrame As String, startDate As Date, dataPoints As Long) As Variant
+    On Error GoTo ErrorHandler
+    
+    ' Test mode: Return sample data instead of actual RSS API call
+    If True Then  ' Set to False for production mode
+        CallRssChartPast = GenerateSampleRssData(stockCode, timeFrame, dataPoints, "past", startDate)
+        Exit Function
+    End If
+    
+    ' Production mode: Actual RSS API call
+    ' TODO: Implement actual RssChartPast call
+    ' Dim startDateStr As String
+    ' startDateStr = Format(startDate, "YYYYMMDD")
+    ' CallRssChartPast = Application.WorksheetFunction.RssChartPast("", stockCode, timeFrame, startDateStr, dataPoints)
+    
+    Exit Function
+    
+ErrorHandler:
+    Call LogDetailedError("CallRssChartPast", Err.Description, "Stock: " & stockCode & ", TimeFrame: " & timeFrame)
+    CallRssChartPast = Empty
+End Function
+
+' Generate sample RSS data for testing
+Private Function GenerateSampleRssData(stockCode As String, timeFrame As String, dataPoints As Long, _
+                                     dataType As String, Optional startDate As Date) As Variant
+    On Error GoTo ErrorHandler
+    
+    Dim dataArray() As Variant
+    Dim i As Long
+    Dim basePrice As Double
+    Dim currentDateTime As Date
+    Dim minuteInterval As Long
+    
+    ' Initialize array with headers
+    ReDim dataArray(0 To dataPoints, 0 To 9)
+    
+    ' Set headers (similar to actual RSS API output)
+    dataArray(0, 0) = "銘柄名称"
+    dataArray(0, 1) = "市場名称"
+    dataArray(0, 2) = "足種"
+    dataArray(0, 3) = "日付"
+    dataArray(0, 4) = "時刻"
+    dataArray(0, 5) = "始値"
+    dataArray(0, 6) = "高値"
+    dataArray(0, 7) = "安値"
+    dataArray(0, 8) = "終値"
+    dataArray(0, 9) = "出来高"
+    
+    ' Determine minute interval
+    Select Case UCase(timeFrame)
+        Case "1M": minuteInterval = 1
+        Case "5M": minuteInterval = 5
+        Case "15M": minuteInterval = 15
+        Case "30M": minuteInterval = 30
+        Case "60M": minuteInterval = 60
+        Case "D": minuteInterval = 1440
+        Case "W": minuteInterval = 10080  ' 7 days
+        Case "M": minuteInterval = 43200  ' 30 days
+        Case Else: minuteInterval = 5
+    End Select
+    
+    ' Set starting point
+    If dataType = "latest" Then
+        currentDateTime = Now
+    Else
+        currentDateTime = startDate + TimeValue("09:00:00")
+    End If
+    
+    basePrice = 2500 + (Rnd() * 100)
+    
+    ' Generate data points
+    For i = 1 To dataPoints
+        ' Skip weekends for daily data
+        If timeFrame = "D" And (Weekday(currentDateTime) = 1 Or Weekday(currentDateTime) = 7) Then
+            currentDateTime = currentDateTime + minuteInterval / 1440
+            GoTo NextSamplePoint
+        End If
+        
+        ' Generate sample OHLCV data
+        Dim openPrice As Double, highPrice As Double, lowPrice As Double, closePrice As Double
+        openPrice = basePrice + (Rnd() - 0.5) * 50
+        highPrice = openPrice + Rnd() * 30
+        lowPrice = openPrice - Rnd() * 30
+        closePrice = openPrice + (Rnd() - 0.5) * 40
+        
+        ' Fill data array
+        dataArray(i, 0) = "Sample Stock " & stockCode
+        dataArray(i, 1) = "東証"
+        dataArray(i, 2) = timeFrame
+        dataArray(i, 3) = Format(currentDateTime, "YYYY/MM/DD")
+        dataArray(i, 4) = Format(currentDateTime, "HH:MM")
+        dataArray(i, 5) = openPrice
+        dataArray(i, 6) = highPrice
+        dataArray(i, 7) = lowPrice
+        dataArray(i, 8) = closePrice
+        dataArray(i, 9) = Int(Rnd() * 100000) + 50000
+        
+        basePrice = closePrice + (Rnd() - 0.5) * 10
+        
+NextSamplePoint:
+        If dataType = "latest" Then
+            currentDateTime = currentDateTime - minuteInterval / 1440
+        Else
+            currentDateTime = currentDateTime + minuteInterval / 1440
+        End If
+    Next i
+    
+    GenerateSampleRssData = dataArray
+    Exit Function
+    
+ErrorHandler:
+    Call LogDetailedError("GenerateSampleRssData", Err.Description)
+    GenerateSampleRssData = Empty
+End Function
+
+' Collect data in batches to handle 3000-point limit
+Private Function CollectDataInBatches(stockCode As String, timeFrame As String, _
+                                    startDate As Date, endDate As Date, _
+                                    totalDataPoints As Long) As Variant
+    On Error GoTo ErrorHandler
+    
+    Dim batchCount As Long
+    Dim maxBatchSize As Long
+    Dim resultArray() As Variant
+    Dim batchData As Variant
+    Dim i As Long, j As Long, k As Long
+    Dim currentStartDate As Date
+    Dim batchSize As Long
+    Dim rssFunction As String
+    
+    maxBatchSize = 3000
+    batchCount = CalculateBatchCount(totalDataPoints, maxBatchSize)
+    rssFunction = GetRSSFunctionType(timeFrame)
+    
+    Call LogMessage(LOG_INFO, "Starting batch collection: " & batchCount & " batches for " & totalDataPoints & " points")
+    
+    ' Initialize result array
+    Dim totalRows As Long
+    totalRows = totalDataPoints + 1  ' +1 for header
+    ReDim resultArray(0 To totalRows, 0 To 9)
+    
+    Dim currentRow As Long
+    currentRow = 0
+    currentStartDate = startDate
+    
+    ' Process each batch
+    For i = 1 To batchCount
+        ' Calculate batch size
+        If i = batchCount Then
+            batchSize = totalDataPoints - (i - 1) * maxBatchSize
+        Else
+            batchSize = maxBatchSize
+        End If
+        
+        Call LogMessage(LOG_INFO, "Processing batch " & i & "/" & batchCount & " (size: " & batchSize & ")")
+        
+        ' Get batch data
+        If rssFunction = "RssChartPast" Then
+            batchData = CallRssChartPast(stockCode, timeFrame, currentStartDate, batchSize)
+        Else
+            batchData = CallRssChart(stockCode, timeFrame, batchSize)
+        End If
+        
+        ' Check if data was retrieved
+        If IsEmpty(batchData) Then
+            Call LogMessage(LOG_ERROR, "Failed to retrieve batch " & i)
+            CollectDataInBatches = Empty
+            Exit Function
+        End If
+        
+        ' Copy batch data to result array
+        Dim batchRows As Long
+        batchRows = UBound(batchData, 1)
+        
+        For j = 0 To batchRows
+            If currentRow <= totalRows Then
+                For k = 0 To 9
+                    resultArray(currentRow, k) = batchData(j, k)
+                Next k
+                currentRow = currentRow + 1
+            End If
+        Next j
+        
+        ' Update start date for next batch (for RssChartPast)
+        If rssFunction = "RssChartPast" And i < batchCount Then
+            ' Calculate next start date based on last data point
+            currentStartDate = currentStartDate + (batchSize * GetTimeIntervalInDays(timeFrame))
+        End If
+    Next i
+    
+    CollectDataInBatches = resultArray
+    Call LogMessage(LOG_INFO, "Batch collection completed successfully")
+    
+    Exit Function
+    
+ErrorHandler:
+    Call LogDetailedError("CollectDataInBatches", Err.Description)
+    CollectDataInBatches = Empty
+End Function
+
+' Convert timeframe to days for date calculation
+Private Function GetTimeIntervalInDays(timeFrame As String) As Double
+    Select Case UCase(timeFrame)
+        Case "1M": GetTimeIntervalInDays = 1 / 1440
+        Case "5M": GetTimeIntervalInDays = 5 / 1440
+        Case "15M": GetTimeIntervalInDays = 15 / 1440
+        Case "30M": GetTimeIntervalInDays = 30 / 1440
+        Case "60M": GetTimeIntervalInDays = 60 / 1440
+        Case "D": GetTimeIntervalInDays = 1
+        Case "W": GetTimeIntervalInDays = 7
+        Case "M": GetTimeIntervalInDays = 30
+        Case Else: GetTimeIntervalInDays = 5 / 1440
+    End Select
+End Function
+
+' Single batch data collection
+Private Function CollectSingleBatch(stockCode As String, timeFrame As String, _
+                                  startDate As Date, endDate As Date, _
+                                  totalDataPoints As Long) As Variant
+    On Error GoTo ErrorHandler
+    
+    Dim rssFunction As String
+    Dim stockData As Variant
+    
+    rssFunction = GetRSSFunctionType(timeFrame)
+    
+    Call LogMessage(LOG_INFO, "Single batch collection using " & rssFunction)
+    
+    If rssFunction = "RssChartPast" Then
+        stockData = CallRssChartPast(stockCode, timeFrame, startDate, totalDataPoints)
+    Else
+        stockData = CallRssChart(stockCode, timeFrame, totalDataPoints)
+    End If
+    
+    CollectSingleBatch = stockData
+    Exit Function
+    
+ErrorHandler:
+    Call LogDetailedError("CollectSingleBatch", Err.Description)
+    CollectSingleBatch = Empty
+End Function
+
+' Filter data by date range
+Private Function FilterDataByDateRange(stockData As Variant, startDate As Date, endDate As Date) As Variant
+    On Error GoTo ErrorHandler
+    
+    If IsEmpty(stockData) Then
+        FilterDataByDateRange = Empty
+        Exit Function
+    End If
+    
+    Dim filteredArray() As Variant
+    Dim rowCount As Long
+    Dim validRows As Long
+    Dim i As Long, j As Long
+    Dim recordDate As Date
+    
+    rowCount = UBound(stockData, 1)
+    ReDim filteredArray(0 To rowCount, 0 To 9)
+    
+    ' Copy header row
+    For j = 0 To 9
+        filteredArray(0, j) = stockData(0, j)
+    Next j
+    
+    validRows = 0
+    
+    ' Filter data rows
+    For i = 1 To rowCount
+        ' Parse date from data
+        On Error Resume Next
+        recordDate = CDate(stockData(i, 3))  ' Column 3 is date
+        On Error GoTo ErrorHandler
+        
+        ' Check if date is within range
+        If recordDate >= startDate And recordDate <= endDate Then
+            validRows = validRows + 1
+            For j = 0 To 9
+                filteredArray(validRows, j) = stockData(i, j)
+            Next j
+        End If
+    Next i
+    
+    ' Resize array to actual size
+    If validRows > 0 Then
+        ReDim Preserve filteredArray(0 To validRows, 0 To 9)
+    End If
+    
+    FilterDataByDateRange = filteredArray
+    Call LogMessage(LOG_INFO, "Filtered data: " & validRows & " records within date range")
+    
+    Exit Function
+    
+ErrorHandler:
+    Call LogDetailedError("FilterDataByDateRange", Err.Description)
+    FilterDataByDateRange = Empty
+End Function
+
+' Export data to CSV file
+Private Function ExportDataToCSV(stockData As Variant, filePath As String) As Boolean
+    On Error GoTo ErrorHandler
+    
+    If IsEmpty(stockData) Then
+        ExportDataToCSV = False
+        Exit Function
+    End If
+    
+    Dim fileNum As Integer
+    Dim csvContent As String
+    Dim i As Long, j As Long
+    Dim rowCount As Long
+    
+    rowCount = UBound(stockData, 1)
+    
+    ' Build CSV content
+    csvContent = ""
+    For i = 0 To rowCount
+        For j = 0 To 9
+            If j > 0 Then csvContent = csvContent & ","
+            csvContent = csvContent & stockData(i, j)
+        Next j
+        csvContent = csvContent & vbCrLf
+    Next i
+    
+    ' Ensure output directory exists
+    Dim outputDir As String
+    outputDir = Left(filePath, InStrRev(filePath, "\"))
+    If Not EnsureDirectoryExists(outputDir) Then
+        Call LogMessage(LOG_ERROR, "Failed to create output directory: " & outputDir)
+        ExportDataToCSV = False
+        Exit Function
+    End If
+    
+    ' Save to file
+    fileNum = FreeFile
+    Open filePath For Output As #fileNum
+    Print #fileNum, csvContent;
+    Close #fileNum
+    
+    Call LogMessage(LOG_INFO, "Data exported to: " & filePath & " (" & rowCount & " rows)")
+    ExportDataToCSV = True
+    
+    Exit Function
+    
+ErrorHandler:
+    If fileNum > 0 Then Close #fileNum
+    Call LogDetailedError("ExportDataToCSV", Err.Description, "FilePath: " & filePath)
+    ExportDataToCSV = False
 End Function
