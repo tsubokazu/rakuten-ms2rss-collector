@@ -10,7 +10,41 @@ Option Explicit
 
 ' Main form display button macro
 Public Sub StartDataCollection()
-    Call ShowMainForm
+    On Error GoTo ErrorHandler
+    
+    ' Direct implementation to avoid macro security issues
+    Dim stockCodes As String
+    Dim result As Boolean
+    
+    ' InputBox interface for stock code entry
+    stockCodes = InputBox("Enter stock codes (comma separated):" & vbCrLf & _
+                         "Example: 7203,6758,9984" & vbCrLf & vbCrLf & _
+                         "Supported formats:" & vbCrLf & _
+                         "- Single: 7203" & vbCrLf & _
+                         "- Multiple: 7203,6758,9984", _
+                         "Stock Data Collector", "7203,6758,9984")
+    
+    If stockCodes <> "" Then
+        Debug.Print "Data collection started for: " & stockCodes
+        result = CollectMultipleStocks(stockCodes, "5M", Date - 1, Date)
+        
+        If result Then
+            MsgBox "Data collection completed successfully!" & vbCrLf & _
+                   "Stocks: " & stockCodes & vbCrLf & _
+                   "Files saved to: output\csv\", vbInformation, "Success"
+        Else
+            MsgBox "Data collection completed with some errors." & vbCrLf & _
+                   "Please check logs for details.", vbExclamation, "Completed"
+        End If
+    Else
+        Debug.Print "Data collection cancelled by user"
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    Debug.Print "StartDataCollection Error: " & Err.Description
+    MsgBox "Data collection error: " & Err.Description, vbCritical, "Error"
 End Sub
 
 ' Quick test button macro
@@ -47,7 +81,26 @@ End Sub
 
 ' Version information button macro
 Public Sub AboutApp()
-    Call ShowAbout
+    On Error GoTo ErrorHandler
+    
+    ' Direct implementation to avoid macro security issues
+    Dim aboutMessage As String
+    
+    aboutMessage = "Rakuten MS2RSS Stock Data Collector" & vbCrLf & vbCrLf
+    aboutMessage = aboutMessage & "Version: 1.0.0" & vbCrLf
+    aboutMessage = aboutMessage & "Build Date: 2025-01-16" & vbCrLf & vbCrLf
+    aboutMessage = aboutMessage & "Uses Rakuten Securities MarketSpeed2 RSS API" & vbCrLf
+    aboutMessage = aboutMessage & "to collect stock data and output as CSV format." & vbCrLf & vbCrLf
+    aboutMessage = aboutMessage & "Created with Claude Code"
+    
+    MsgBox aboutMessage, vbInformation, "About This Application"
+    Debug.Print "About information displayed"
+    
+    Exit Sub
+    
+ErrorHandler:
+    Debug.Print "AboutApp Error: " & Err.Description
+    MsgBox "About display error: " & Err.Description, vbCritical, "Error"
 End Sub
 
 ' Open output folder
