@@ -6,16 +6,21 @@
 
 このファイルは、楽天証券MarketSpeed2のRSS APIを使用して株価データを取得し、CSV形式で出力するVBAアプリケーションです。
 
-## ⚠️ 重要：文字化け対策
+## ⚠️ 重要：最新のVBAファイル構成
 
-**VBAファイルをインポートする際は、必ず `vba/src-sjis/` フォルダのファイルを使用してください！**
+**VBAファイルは `vba/src-sjis/` フォルダから最新版をインポートしてください！**
 
 ```
-❌ vba/src/     - UTF-8版（文字化けする）
-✅ vba/src-sjis/ - Shift_JIS版（文字化けしない）⭐
+✅ vba/src-sjis/ - 最新版（コンパイルエラー修正済み）⭐
+❌ vba/src/     - 旧版（問題あり）
+❌ vba/src-sjis-fixed/ - 中間版（使用非推奨）
 ```
 
-詳細は `vba/ENCODING_GUIDE.md` を参照してください。
+**🔧 修正済み問題**：
+- Attribute VB_Name エラー解決
+- UserForm削除（InputBox方式に変更）
+- 全文英語化でコンパイルエラー解決
+- テストモード実装（MarketSpeed2不要でテスト可能）
 
 ## セットアップ手順
 
@@ -54,18 +59,18 @@ vba/src-sjis/  ← このフォルダからインポート（文字化けしな�
 ```
 
 #### モジュール（.bas）
-- **MainModule.bas** - ShowMainForm()実装
-- **WorksheetMacros.bas** - ワークシートボタン用マクロ  
-- **DataCollector.bas** - データ取得エンジン
-- **CSVExporter.bas** - CSV出力機能
 - **Utils.bas** - ユーティリティ・ログ機能
+- **CSVExporter.bas** - CSV出力機能（簡易版）
+- **DataCollector.bas** - データ取得エンジン（テストモード対応）
+- **MainModule.bas** - ShowMainForm()実装（InputBox方式）
+- **WorksheetMacros.bas** - ワークシートボタン用マクロ
+- **SimpleTest.bas** - 基本テスト機能
 
 #### ユーザーフォーム（.frm）
-- **MainForm.frm** - メインGUIフォーム
+~~削除済み~~ - コンパイルエラー回避のため削除（InputBox方式に変更）
 
 #### クラスモジュール（.cls）
-- **StockData.cls** - 株価データ構造クラス
-- **Configuration.cls** - 設定管理クラス
+~~削除済み~~ - Attribute エラー回避のため削除
 
 ### 4. 参照設定の追加
 
@@ -92,32 +97,28 @@ VBAエディタ（Alt+F11）で「ツール」→「参照設定」を開き、�
 2. 「ファイルのインポート」を選択
 3. **`vba/src-sjis/modules/`** から以下を順番にインポート：
    ```
-   MainModule.bas         ⭐ ShowMainForm()含む
+   Utils.bas              ⭐ 基本ユーティリティ
+   CSVExporter.bas        ⭐ CSV出力機能
+   DataCollector.bas      ⭐ データ取得（テストモード）
+   MainModule.bas         ⭐ ShowMainForm()含む（InputBox方式）
    WorksheetMacros.bas    ⭐ ボタン用マクロ
-   DataCollector.bas
-   CSVExporter.bas
-   Utils.bas
+   SimpleTest.bas         ⭐ 基本テスト機能
    ```
 
-#### Step 4: フォームインポート
-1. 「ファイルのインポート」
-2. **`vba/src-sjis/forms/MainForm.frm`** をインポート
+#### Step 4: コンパイル確認
+1. VBAエディタで「デバッグ」→「VBAProjectのコンパイル」
+2. エラーが表示されないことを確認
 
-#### Step 5: クラスモジュールインポート
-1. 「ファイルのインポート」
-2. **`vba/src-sjis/classes/`** から以下をインポート：
-   ```
-   StockData.cls
-   Configuration.cls
-   ```
+#### Step 5: 基本テスト実行
+```vba
+Sub Test()
+    Call TestBasic
+End Sub
+```
 
-#### Step 6: 文字化け確認
-インポート後、以下を確認：
-- ✅ 日本語コメントが正しく表示される
-- ✅ 関数名・変数名が正しく表示される
-- ✅ 文字列リテラルが正しく表示される
-
-**文字化けした場合は `vba/ENCODING_GUIDE.md` を参照してください。**
+**✅ 期待される結果**：
+- メッセージボックス「VBA is working correctly!」が表示
+- エラーが発生しない
 
 ## ワークシート構成
 
@@ -160,15 +161,23 @@ C9: [マクロ一覧] ← ShowMacroList マクロ
 
 ## 基本的な使用方法
 
-### 1. GUIでのデータ収集
+### 1. 基本動作テスト
 ```vba
-' メインフォームを表示
+' VBA動作確認
+Sub Test_Basic()
+    Call TestBasic
+End Sub
+```
+
+### 2. データ収集（InputBox方式）
+```vba
+' メインインターフェース表示
 Sub Test_ShowMainForm()
     Call ShowMainForm
 End Sub
 ```
 
-### 2. クイックテスト実行
+### 3. クイックテスト実行
 ```vba
 ' 接続とデータ取得のテスト
 Sub Test_QuickTest()
@@ -176,7 +185,7 @@ Sub Test_QuickTest()
 End Sub
 ```
 
-### 3. プログラムからの直接実行
+### 4. プログラムからの直接実行
 ```vba
 Sub Test_DirectCall()
     Dim result As Boolean
@@ -192,7 +201,7 @@ Sub Test_DirectCall()
 End Sub
 ```
 
-### 4. 複数銘柄の一括取得
+### 5. 複数銘柄の一括取得
 ```vba
 Sub Test_MultiplStocks()
     Dim result As Boolean
