@@ -1,4 +1,3 @@
-Attribute VB_Name = "DataCollector"
 '******************************************************************************
 ' Rakuten MS2RSS Stock Data Collector - Data Collection Module
 ' 

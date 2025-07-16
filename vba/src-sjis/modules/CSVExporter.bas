@@ -1,4 +1,3 @@
-Attribute VB_Name = "CSVExporter"
 '******************************************************************************
 ' Rakuten MS2RSS Stock Data Collector - CSV Export Module
 ' 

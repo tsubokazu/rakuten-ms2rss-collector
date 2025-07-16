@@ -1,4 +1,3 @@
-Attribute VB_Name = "Utils"
 '******************************************************************************
 ' Rakuten MS2RSS Stock Data Collector - Utility Module
 ' 

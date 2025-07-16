@@ -1,4 +1,3 @@
-Attribute VB_Name = "WorksheetMacros"
 '******************************************************************************
 ' Rakuten MS2RSS Stock Data Collector - Worksheet Macros
 ' 

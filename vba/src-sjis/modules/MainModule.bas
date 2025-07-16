@@ -1,4 +1,3 @@
-Attribute VB_Name = "MainModule"
 '******************************************************************************
 ' Rakuten MS2RSS Stock Data Collector - Main Module
 ' 

@@ -1,4 +1,3 @@
-Attribute VB_Name = "SimpleTest"
 '******************************************************************************
 ' Simple Test Module for VBA Functionality
 ' 

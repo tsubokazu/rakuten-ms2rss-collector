@@ -4,7 +4,12 @@
 
 This folder contains all VBA source code for the Rakuten MS2RSS Stock Data Collector.
 
-**✅ COMPILE ERROR FIXED**: All files have been converted to English to resolve character encoding issues.
+**✅ COMPILE ERROR FIXED**: All files have been converted to English and Attribute lines removed to resolve compilation issues.
+
+**IMPORTANT**: 
+- All `Attribute VB_Name` lines have been removed (VBA Editor generates them automatically)
+- UserForms and Class modules removed to avoid complex syntax errors
+- Simple InputBox interface used instead of complex GUI
 
 ## File Structure
 
@@ -24,10 +29,7 @@ This folder contains all VBA source code for the Rakuten MS2RSS Stock Data Colle
 | ~~**MainForm.frm**~~ | Removed due to compatibility issues - using InputBox interface instead |
 
 ### 📁 classes/ - Class Modules
-| File | Purpose |
-|------|---------|
-| **StockData.cls** | Stock data representation class |
-| **Configuration.cls** | Configuration management class |
+**Note**: Class modules have been removed to avoid Attribute compilation errors. All functionality is implemented in standard modules.
 
 ## Import Instructions for Excel
 
@@ -63,14 +65,8 @@ This folder contains all VBA source code for the Rakuten MS2RSS Stock Data Colle
 #### User Forms (.frm)
 **Note**: User forms have been removed to avoid compatibility issues. The system now uses simple InputBox interface instead.
 
-#### Class Modules (.cls) - Optional
-1. Right-click in Project Explorer
-2. Select "Import File"
-3. Import class files:
-   ```
-   classes/StockData.cls
-   classes/Configuration.cls
-   ```
+#### Class Modules (.cls)
+**Note**: Class modules have been removed to avoid Attribute VB_Name compilation errors.
 
 ### 5. Worksheet Setup
 
