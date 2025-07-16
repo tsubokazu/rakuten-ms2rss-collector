@@ -15,7 +15,34 @@ End Sub
 
 ' Quick test button macro
 Public Sub RunQuickTest()
-    Call QuickTest
+    On Error GoTo ErrorHandler
+    
+    ' Simple quick test - direct implementation to avoid macro security issues
+    Dim result As Boolean
+    Dim testStockCode As String
+    
+    testStockCode = "7203"  ' Toyota Motor
+    Debug.Print "Quick test start: " & testStockCode
+    
+    ' Test basic data collection
+    result = CollectStockData(testStockCode, "5M", Date - 1, Date)
+    
+    If result Then
+        MsgBox "Quick test success!" & vbCrLf & _
+               "Stock: " & testStockCode & vbCrLf & _
+               "Test data generated successfully", _
+               vbInformation, "Test Result"
+        Debug.Print "Quick test success"
+    Else
+        MsgBox "Quick test failed. Please check the log.", vbExclamation, "Test Result"
+        Debug.Print "Quick test failed"
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    Debug.Print "RunQuickTest Error: " & Err.Description
+    MsgBox "Quick test error: " & Err.Description, vbCritical, "Test Error"
 End Sub
 
 ' Version information button macro
