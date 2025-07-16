@@ -131,8 +131,8 @@ Public Sub ShowSystemInfo()
     info = info & "OS: " & Application.OperatingSystem & vbCrLf
     info = info & "User: " & Application.UserName & vbCrLf
     info = info & "Current Time: " & Format(Now, "YYYY-MM-DD HH:MM:SS") & vbCrLf & vbCrLf
-    info = info & APP_NAME & vbCrLf
-    info = info & "Version: " & APP_VERSION
+    info = info & "Rakuten MS2RSS Stock Data Collector" & vbCrLf
+    info = info & "Version: 1.0.0"
     
     MsgBox info, vbInformation, "System Information"
 End Sub
