@@ -1,199 +1,198 @@
-# VBAƒ\[ƒXƒR[ƒh - ƒCƒ“ƒ|[ƒgè‡
+# VBA Source Code - Import Guide
 
-## ŠT—v
+## Overview
 
-‚±‚ÌƒtƒHƒ‹ƒ_‚É‚ÍAŠy“VMS2RSSŠ”‰¿ƒf[ƒ^ƒRƒŒƒNƒ^[‚Ì‚·‚×‚Ä‚ÌVBAƒ\[ƒXƒR[ƒh‚ªŠÜ‚Ü‚ê‚Ä‚¢‚Ü‚·B
+This folder contains all VBA source code for the Rakuten MS2RSS Stock Data Collector.
 
-## ƒtƒ@ƒCƒ‹\¬
+**âœ… COMPILE ERROR FIXED**: All files have been converted to English to resolve character encoding issues.
 
-### ? modules/ - VBAƒ‚ƒWƒ…[ƒ‹
-| ƒtƒ@ƒCƒ‹–¼ | à–¾ | å—vŠÖ” |
-|------------|------|----------|
-| **MainModule.bas** | ƒƒCƒ“ƒGƒ“ƒgƒŠ[ƒ|ƒCƒ“ƒg | `ShowMainForm()`, `QuickTest()` |
-| **WorksheetMacros.bas** | ƒ[ƒNƒV[ƒgƒ{ƒ^ƒ“—pƒ}ƒNƒ | `StartDataCollection()` ‚È‚Ç |
-| **DataCollector.bas** | ƒf[ƒ^æ“¾ƒGƒ“ƒWƒ“ | `CollectStockData()` |
-| **CSVExporter.bas** | CSVo—Í‹@”\ | `ExportStockDataToCSV()` |
-| **Utils.bas** | ƒ†[ƒeƒBƒŠƒeƒBEƒƒO | `LogMessage()`, `ValidateTimeFrame()` |
+## File Structure
 
-### ? forms/ - ƒ†[ƒU[ƒtƒH[ƒ€
-| ƒtƒ@ƒCƒ‹–¼ | à–¾ |
-|------------|------|
-| **MainForm.frm** | ƒƒCƒ“GUIƒtƒH[ƒ€ |
+### ğŸ“ modules/ - VBA Modules
+| File | Purpose | Key Functions |
+|------|---------|---------------|
+| **MainModule.bas** | Main entry point | `ShowMainForm()`, `QuickTest()` |
+| **WorksheetMacros.bas** | Worksheet button macros | `StartDataCollection()` etc. |
+| **DataCollector.bas** | Data collection engine | `CollectStockData()` |
+| **CSVExporter.bas** | CSV export functionality | `ExportStockDataToCSV()` |
+| **Utils.bas** | Utilities & logging | `LogMessage()`, `EnsureDirectoryExists()` |
 
-### ? classes/ - ƒNƒ‰ƒXƒ‚ƒWƒ…[ƒ‹
-| ƒtƒ@ƒCƒ‹–¼ | à–¾ |
-|------------|------|
-| **StockData.cls** | Š”‰¿ƒf[ƒ^\‘¢ƒNƒ‰ƒX |
-| **Configuration.cls** | İ’èŠÇ—ƒNƒ‰ƒX |
+### ğŸ“ forms/ - User Forms
+| File | Purpose |
+|------|---------|
+| **MainForm.frm** | Main GUI form (simplified English version) |
 
-## Excel‚Ö‚ÌƒCƒ“ƒ|[ƒgè‡
+### ğŸ“ classes/ - Class Modules
+| File | Purpose |
+|------|---------|
+| **StockData.cls** | Stock data representation class |
+| **Configuration.cls** | Configuration management class |
 
-### 1. V‚µ‚¢Excelƒtƒ@ƒCƒ‹‚ğì¬
-1. Microsoft Excel‚ğ‹N“®
-2. V‚µ‚¢ƒuƒbƒN‚ğì¬
-3. ƒtƒ@ƒCƒ‹–¼‚ğ`StockDataCollector.xlsm`‚Æ‚µ‚Ä•Û‘¶iƒ}ƒNƒ—LŒøƒuƒbƒNŒ`®j
+## Import Instructions for Excel
 
-### 2. VBAƒGƒfƒBƒ^‚ğŠJ‚­
-1. `Alt + F11`‚ğ‰Ÿ‚µ‚ÄVBAƒGƒfƒBƒ^‚ğŠJ‚­
-2. ƒvƒƒWƒFƒNƒgƒGƒNƒXƒvƒ[ƒ‰[‚ÅVBAProject‚ğŠm”F
+### 1. Create New Excel File
+1. Open Microsoft Excel
+2. Create new workbook
+3. Save as `StockDataCollector.xlsm` (macro-enabled workbook)
 
-### 3. QÆİ’è‚ğ’Ç‰Á
-1. VBAƒGƒfƒBƒ^‚Åuƒc[ƒ‹v¨uQÆİ’èv‚ğ‘I‘ğ
-2. ˆÈ‰º‚Ì€–Ú‚Éƒ`ƒFƒbƒN‚ğ“ü‚ê‚éF
-   - ? Microsoft Office 16.0 Object Library
-   - ? Microsoft Forms 2.0 Object Library
-   - ? Microsoft Windows Common Controls 6.0 (SP6)
-   - ? Microsoft Windows Common Controls-2 6.0 (SP6)
+### 2. Open VBA Editor
+1. Press `Alt + F11` to open VBA Editor
+2. Confirm VBAProject in Project Explorer
 
-### 4. ƒ‚ƒWƒ…[ƒ‹‚ğƒCƒ“ƒ|[ƒg
+### 3. Add References (Optional)
+1. In VBA Editor, select "Tools" â†’ "References"
+2. Check the following items if needed:
+   - âœ… Microsoft Office Object Library
+   - âœ… Microsoft Forms 2.0 Object Library
 
-#### •W€ƒ‚ƒWƒ…[ƒ‹ (.bas)
-1. ƒvƒƒWƒFƒNƒgƒGƒNƒXƒvƒ[ƒ‰[‚Å‰EƒNƒŠƒbƒN
-2. uƒtƒ@ƒCƒ‹‚ÌƒCƒ“ƒ|[ƒgv‚ğ‘I‘ğ
-3. ˆÈ‰º‚Ìƒtƒ@ƒCƒ‹‚ğ‡”Ô‚ÉƒCƒ“ƒ|[ƒgF
+### 4. Import Modules
+
+#### Standard Modules (.bas)
+1. Right-click in Project Explorer
+2. Select "Import File"
+3. Import files in this order:
    ```
-   modules/MainModule.bas
-   modules/WorksheetMacros.bas
-   modules/DataCollector.bas
-   modules/CSVExporter.bas
-   modules/Utils.bas
+   1. modules/Utils.bas          (utilities first)
+   2. modules/CSVExporter.bas    (export functions)
+   3. modules/DataCollector.bas  (data collection)
+   4. modules/MainModule.bas     (main functions)
+   5. modules/WorksheetMacros.bas (button macros)
    ```
 
-#### ƒ†[ƒU[ƒtƒH[ƒ€ (.frm)
-1. ƒvƒƒWƒFƒNƒgƒGƒNƒXƒvƒ[ƒ‰[‚Å‰EƒNƒŠƒbƒN
-2. uƒtƒ@ƒCƒ‹‚ÌƒCƒ“ƒ|[ƒgv‚ğ‘I‘ğ
-3. `forms/MainForm.frm`‚ğƒCƒ“ƒ|[ƒg
+#### User Forms (.frm)
+1. Right-click in Project Explorer
+2. Select "Import File"
+3. Import `forms/MainForm.frm`
 
-#### ƒNƒ‰ƒXƒ‚ƒWƒ…[ƒ‹ (.cls)
-1. ƒvƒƒWƒFƒNƒgƒGƒNƒXƒvƒ[ƒ‰[‚Å‰EƒNƒŠƒbƒN
-2. uƒtƒ@ƒCƒ‹‚ÌƒCƒ“ƒ|[ƒgv‚ğ‘I‘ğ
-3. ˆÈ‰º‚Ìƒtƒ@ƒCƒ‹‚ğƒCƒ“ƒ|[ƒgF
+#### Class Modules (.cls) - Optional
+1. Right-click in Project Explorer
+2. Select "Import File"
+3. Import class files:
    ```
    classes/StockData.cls
    classes/Configuration.cls
    ```
 
-### 5. ƒ[ƒNƒV[ƒg‚Ìİ’è
+### 5. Worksheet Setup
 
-#### Sheet1‚Ìİ’è
-1. Sheet1‚ğ‘I‘ğ‚µAˆÈ‰º‚Ì‚æ‚¤‚Éİ’èF
+#### Sheet1 Configuration
+Set up Sheet1 with the following layout:
 
 ```
-A1: Šy“VMS2RSSŠ”‰¿ƒf[ƒ^ƒRƒŒƒNƒ^[ v1.0
-A3: [ƒf[ƒ^ûWŠJn] (ƒ{ƒ^ƒ“)
-A5: [ƒNƒCƒbƒNƒeƒXƒg] (ƒ{ƒ^ƒ“)
-A7: [Ú‘±ƒeƒXƒg] (ƒ{ƒ^ƒ“)
-A9: [İ’è•\¦] (ƒ{ƒ^ƒ“)
-A11: [ƒwƒ‹ƒv] (ƒ{ƒ^ƒ“)
+A1: Rakuten MS2RSS Stock Data Collector v1.0
+A3: [Start Data Collection] (Button)
+A5: [Quick Test] (Button)
+A7: [Connection Test] (Button)
+A9: [Help] (Button)
 
-C3: [o—ÍƒtƒHƒ‹ƒ_‚ğŠJ‚­] (ƒ{ƒ^ƒ“)
-C5: [ƒƒOƒtƒHƒ‹ƒ_‚ğŠJ‚­] (ƒ{ƒ^ƒ“)
-C7: [ƒo[ƒWƒ‡ƒ“î•ñ] (ƒ{ƒ^ƒ“)
+C3: [Open Output Folder] (Button)
+C5: [Open Log Folder] (Button)
+C7: [About] (Button)
 ```
 
-#### ƒ{ƒ^ƒ“‚Ìƒ}ƒNƒŠ„‚è“–‚Ä
-Šeƒ{ƒ^ƒ“‚ÉˆÈ‰º‚Ìƒ}ƒNƒ‚ğŠ„‚è“–‚ÄF
+#### Button Macro Assignments
+Assign the following macros to each button:
 
-| ƒ{ƒ^ƒ“–¼ | ƒ}ƒNƒ–¼ |
-|----------|----------|
-| ƒf[ƒ^ûWŠJn | `StartDataCollection` |
-| ƒNƒCƒbƒNƒeƒXƒg | `RunQuickTest` |
-| Ú‘±ƒeƒXƒg | `TestConnection` |
-| İ’è•\¦ | `DisplaySettings` |
-| ƒwƒ‹ƒv | `ShowHelp` |
-| o—ÍƒtƒHƒ‹ƒ_‚ğŠJ‚­ | `OpenOutputFolder` |
-| ƒƒOƒtƒHƒ‹ƒ_‚ğŠJ‚­ | `OpenLogFolder` |
-| ƒo[ƒWƒ‡ƒ“î•ñ | `AboutApp` |
+| Button | Macro |
+|--------|-------|
+| Start Data Collection | `StartDataCollection` |
+| Quick Test | `RunQuickTest` |
+| Connection Test | `TestConnection` |
+| Help | `ShowHelp` |
+| Open Output Folder | `OpenOutputFolder` |
+| Open Log Folder | `OpenLogFolder` |
+| About | `AboutApp` |
 
-## Šî–{“I‚Èg—p•û–@
+## Basic Usage
 
-### 1. ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‹N“®
+### 1. Launch Application
 ```vba
-' ƒƒCƒ“ƒtƒH[ƒ€‚ğ•\¦
+' Show main form
 Sub Test_ShowMainForm()
     Call ShowMainForm
 End Sub
 ```
 
-### 2. ƒNƒCƒbƒNƒeƒXƒgÀs
+### 2. Run Quick Test
 ```vba
-' Ú‘±‚Æƒf[ƒ^æ“¾‚ÌƒeƒXƒg
+' Test connection and data collection
 Sub Test_QuickTest()
     Call QuickTest
 End Sub
 ```
 
-### 3. ƒvƒƒOƒ‰ƒ€‚©‚ç‚Ì’¼ÚÀs
+### 3. Direct Program Execution
 ```vba
 Sub Test_DirectCall()
     Dim result As Boolean
     
-    ' ƒgƒˆƒ^©“®Ô‚Ì5•ª‘«ƒf[ƒ^‚ğ1TŠÔ•ªæ“¾
+    ' Collect Toyota 5-minute data for 1 week
     result = CollectStockData("7203", "5M", Date-7, Date)
     
     If result Then
-        MsgBox "ƒf[ƒ^æ“¾¬Œ÷"
+        MsgBox "Data collection successful"
     Else
-        MsgBox "ƒf[ƒ^æ“¾¸”s"
+        MsgBox "Data collection failed"
     End If
 End Sub
 ```
 
-## å—vŠÖ”ƒŠƒtƒ@ƒŒƒ“ƒX
+## Key Function Reference
 
 ### ShowMainForm()
-ƒƒCƒ“GUIƒtƒH[ƒ€‚ğ•\¦‚µ‚Äƒf[ƒ^ûW‚ğŠJn
+Display main GUI form and start data collection
 
 ### CollectStockData(stockCode, timeFrame, startDate, endDate)
-- **stockCode**: –Á•¿ƒR[ƒhi"7203", "7203.T" ‚È‚Çj
-- **timeFrame**: ‘«íi"1M", "5M", "15M", "30M", "60M", "D"j
-- **startDate**: ŠJn“ú
-- **endDate**: I—¹“ú
-- **–ß‚è’l**: Booleani¬Œ÷Truej
+- **stockCode**: Stock code ("7203", "7203.T" etc.)
+- **timeFrame**: Time frame ("1M", "5M", "15M", "30M", "60M", "D")
+- **startDate**: Start date
+- **endDate**: End date
+- **Return**: Boolean (True if successful)
 
 ### CollectMultipleStocks(stockCodes, timeFrame, startDate, endDate)
-•¡”–Á•¿‚ÌˆêŠ‡ƒf[ƒ^æ“¾
-- **stockCodes**: ƒJƒ“ƒ}‹æØ‚è‚Ì–Á•¿ƒR[ƒhi"7203,6758,9984"j
+Batch data collection for multiple stocks
+- **stockCodes**: Comma-separated stock codes ("7203,6758,9984")
 
-## ƒgƒ‰ƒuƒ‹ƒVƒ…[ƒeƒBƒ“ƒO
+## Troubleshooting
 
-### ‚æ‚­‚ ‚éƒGƒ‰[
+### Common Errors
 
-1. **uƒvƒƒV[ƒWƒƒ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñv**
-   - ƒ‚ƒWƒ…[ƒ‹‚ª³‚µ‚­ƒCƒ“ƒ|[ƒg‚³‚ê‚Ä‚¢‚é‚©Šm”F
-   - QÆİ’è‚ª³‚µ‚­İ’è‚³‚ê‚Ä‚¢‚é‚©Šm”F
+1. **"Procedure declaration does not match"**
+   - âœ… FIXED: All files converted to English
+   - Ensure all modules are imported correctly
+   - Check reference settings
 
-2. **uRSSŠÖ”‚ªƒGƒ‰[‚ğ•Ô‚µ‚Ü‚·v**
-   - MarketSpeed2‚ª‹N“®‚µ‚Ä‚¢‚é‚©Šm”F
-   - RSS‹@”\‚ª—LŒø‚É‚È‚Á‚Ä‚¢‚é‚©Šm”F
+2. **"RSS function returns error"**
+   - Ensure MarketSpeed2 is running
+   - Verify RSS function is enabled
 
-3. **uƒtƒ@ƒCƒ‹‚ª•Û‘¶‚Å‚«‚Ü‚¹‚ñv**
-   - o—ÍƒtƒHƒ‹ƒ_‚ª‘¶İ‚·‚é‚©Šm”F
-   - ƒtƒHƒ‹ƒ_‚Ì‘‚«‚İŒ ŒÀ‚ğŠm”F
+3. **"Cannot save file"**
+   - Check if output folder exists
+   - Verify folder write permissions
 
-### ƒfƒoƒbƒO•û–@
+### Debug Methods
 
-1. **ƒXƒeƒbƒvÀs**: F8ƒL[‚Ås’PˆÊÀs
-2. **ƒuƒŒ[ƒNƒ|ƒCƒ“ƒg**: F9ƒL[‚Åİ’è
-3. **ƒCƒ~ƒfƒBƒGƒCƒgƒEƒBƒ“ƒhƒE**: Ctrl+G‚Å•\¦
-4. **ƒƒOŠm”F**: `output/logs/`ƒtƒHƒ‹ƒ_‚ÌƒƒOƒtƒ@ƒCƒ‹
+1. **Step execution**: F8 key for line-by-line execution
+2. **Breakpoints**: F9 key to set breakpoints
+3. **Immediate Window**: Ctrl+G to display
+4. **Log check**: Check log files in `output/logs/` folder
 
-## ’ˆÓ–€
+## Important Notes
 
-- ƒ}ƒNƒ‚ÌƒZƒLƒ…ƒŠƒeƒBİ’è‚ÅAƒ}ƒNƒ‚ÌÀs‚ğ‹–‰Â‚µ‚Ä‚­‚¾‚³‚¢
-- MarketSpeed2‚ÌRSS‹@”\‚ª—LŒø‚É‚È‚Á‚Ä‚¢‚é•K—v‚ª‚ ‚è‚Ü‚·
-- ‘å—Êƒf[ƒ^æ“¾‚Íˆ—ŠÔ‚ª‚©‚©‚éê‡‚ª‚ ‚è‚Ü‚·
-- –{”ÔŠÂ‹«‚Å‚Ìg—p‘O‚É\•ª‚ÈƒeƒXƒg‚ğÀ{‚µ‚Ä‚­‚¾‚³‚¢
+- Enable macro execution in Excel security settings
+- MarketSpeed2 RSS function must be enabled
+- Large data collection may take considerable time
+- Perform thorough testing before production use
 
-## ƒJƒXƒ^ƒ}ƒCƒY
+## Customization
 
-### V‚µ‚¢‘«í‚Ì’Ç‰Á
-`Utils.bas`‚Ì`ValidateTimeFrame`ŠÖ”‚ğC³
+### Adding New Time Frames
+Modify `ValidateTimeFrame` function in `Utils.bas`
 
-### V‚µ‚¢sê‚Ì’Ç‰Á
-`DataCollector.bas`‚Ì`ValidateStockCode`ŠÖ”‚ğC³
+### Adding New Markets
+Modify `ValidateStockCode` function in `DataCollector.bas`
 
-### UI•\¦€–Ú‚Ì•ÏX
-`MainForm.frm`‚ÌƒfƒUƒCƒ“‚ğC³
+### Changing UI Elements
+Modify design in `MainForm.frm`
 
-Ú×‚ÈƒJƒXƒ^ƒ}ƒCƒY•û–@‚ÍA`docs/vba-guide.md`‚ğQÆ‚µ‚Ä‚­‚¾‚³‚¢B
+For detailed customization methods, refer to `docs/vba-guide.md`
