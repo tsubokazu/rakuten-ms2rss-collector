@@ -25,12 +25,83 @@ Public Sub StartDataCollection()
                          "Stock Data Collector", "7203,6758,9984")
     
     If stockCodes <> "" Then
-        Debug.Print "Data collection started for: " & stockCodes
-        result = CollectMultipleStocks(stockCodes, "5M", Date - 1, Date)
+        ' Get date range from user
+        Dim startDateStr As String
+        Dim endDateStr As String
+        Dim startDate As Date
+        Dim endDate As Date
+        
+        ' Input start date
+        startDateStr = InputBox("Enter start date:" & vbCrLf & _
+                               "Format: YYYY/MM/DD or MM/DD" & vbCrLf & _
+                               "Examples:" & vbCrLf & _
+                               "- 2025/01/01" & vbCrLf & _
+                               "- 01/01 (current year)" & vbCrLf & _
+                               "- Leave blank for yesterday", _
+                               "Start Date", Format(Date - 7, "YYYY/MM/DD"))
+        
+        If startDateStr = "" Then
+            startDate = Date - 1  ' Default to yesterday
+        Else
+            On Error GoTo DateError
+            If Len(startDateStr) <= 5 Then
+                ' MM/DD format - add current year
+                startDate = CDate(Year(Date) & "/" & startDateStr)
+            Else
+                startDate = CDate(startDateStr)
+            End If
+        End If
+        
+        ' Input end date
+        endDateStr = InputBox("Enter end date:" & vbCrLf & _
+                             "Format: YYYY/MM/DD or MM/DD" & vbCrLf & _
+                             "Examples:" & vbCrLf & _
+                             "- 2025/01/31" & vbCrLf & _
+                             "- 01/31 (current year)" & vbCrLf & _
+                             "- Leave blank for today", _
+                             "End Date", Format(Date, "YYYY/MM/DD"))
+        
+        If endDateStr = "" Then
+            endDate = Date  ' Default to today
+        Else
+            If Len(endDateStr) <= 5 Then
+                ' MM/DD format - add current year
+                endDate = CDate(Year(Date) & "/" & endDateStr)
+            Else
+                endDate = CDate(endDateStr)
+            End If
+        End If
+        
+        ' Validate date range
+        If startDate > endDate Then
+            MsgBox "Start date cannot be later than end date!" & vbCrLf & _
+                   "Start: " & Format(startDate, "YYYY/MM/DD") & vbCrLf & _
+                   "End: " & Format(endDate, "YYYY/MM/DD"), vbExclamation, "Invalid Date Range"
+            Exit Sub
+        End If
+        
+        ' Get timeframe from user
+        Dim timeFrame As String
+        timeFrame = InputBox("Select timeframe:" & vbCrLf & _
+                            "Available options:" & vbCrLf & _
+                            "- 1M (1 minute)" & vbCrLf & _
+                            "- 5M (5 minutes)" & vbCrLf & _
+                            "- 15M (15 minutes)" & vbCrLf & _
+                            "- 30M (30 minutes)" & vbCrLf & _
+                            "- 60M (60 minutes)" & vbCrLf & _
+                            "- D (Daily)", _
+                            "Timeframe Selection", "5M")
+        
+        If timeFrame = "" Then timeFrame = "5M"  ' Default to 5 minutes
+        
+        Debug.Print "Data collection started for: " & stockCodes & " (" & timeFrame & ") from " & Format(startDate, "YYYY/MM/DD") & " to " & Format(endDate, "YYYY/MM/DD")
+        result = CollectMultipleStocks(stockCodes, timeFrame, startDate, endDate)
         
         If result Then
             MsgBox "Data collection completed successfully!" & vbCrLf & _
                    "Stocks: " & stockCodes & vbCrLf & _
+                   "Timeframe: " & timeFrame & vbCrLf & _
+                   "Period: " & Format(startDate, "YYYY/MM/DD") & " to " & Format(endDate, "YYYY/MM/DD") & vbCrLf & _
                    "Files saved to: output\csv\", vbInformation, "Success"
         Else
             MsgBox "Data collection completed with some errors." & vbCrLf & _
@@ -40,6 +111,12 @@ Public Sub StartDataCollection()
         Debug.Print "Data collection cancelled by user"
     End If
     
+    Exit Sub
+    
+DateError:
+    MsgBox "Invalid date format!" & vbCrLf & _
+           "Please use YYYY/MM/DD or MM/DD format" & vbCrLf & _
+           "Examples: 2025/01/01 or 01/01", vbExclamation, "Date Error"
     Exit Sub
     
 ErrorHandler:
