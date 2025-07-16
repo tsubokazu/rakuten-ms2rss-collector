@@ -28,12 +28,24 @@ Public Sub OpenOutputFolder()
     On Error GoTo ErrorHandler
     
     Dim outputPath As String
-    outputPath = ThisWorkbook.Path & "\output\csv\"
+    Dim csvPath As String
+    Dim basePath As String
     
-    ' Create folder if it doesn't exist
-    If Dir(outputPath, vbDirectory) = "" Then
-        MkDir outputPath
+    basePath = ThisWorkbook.Path & "\output\"
+    csvPath = basePath & "csv\"
+    
+    ' Create folders using utility function
+    If Not EnsureDirectoryExists(basePath) Then
+        MsgBox "Failed to create output directory", vbCritical
+        Exit Sub
     End If
+    
+    If Not EnsureDirectoryExists(csvPath) Then
+        MsgBox "Failed to create CSV directory", vbCritical
+        Exit Sub
+    End If
+    
+    outputPath = csvPath
     
     ' Open folder
     Shell "explorer.exe " & Chr(34) & outputPath & Chr(34), vbNormalFocus
@@ -51,11 +63,20 @@ Public Sub OpenLogFolder()
     On Error GoTo ErrorHandler
     
     Dim logPath As String
-    logPath = ThisWorkbook.Path & "\output\logs\"
+    Dim outputPath As String
     
-    ' Create folder if it doesn't exist
-    If Dir(logPath, vbDirectory) = "" Then
-        MkDir logPath
+    outputPath = ThisWorkbook.Path & "\output\"
+    logPath = outputPath & "logs\"
+    
+    ' Create folders using utility function
+    If Not EnsureDirectoryExists(outputPath) Then
+        MsgBox "Failed to create output directory", vbCritical
+        Exit Sub
+    End If
+    
+    If Not EnsureDirectoryExists(logPath) Then
+        MsgBox "Failed to create log directory", vbCritical
+        Exit Sub
     End If
     
     ' Open folder
