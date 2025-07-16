@@ -1,12 +1,160 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} MainForm 
-   Caption         =   "楽天MS2RSS株価データコレクター"
-   ClientHeight    =   8400
+   Caption         =   "楽天MS2RSS株価データコレクター v1.0"
+   ClientHeight    =   6000
    ClientLeft      =   45
    ClientTop       =   390
-   ClientWidth     =   12000
-   OleObjectBlob   =   "MainForm.frx":0000
-   StartUpPosition =   1  'オーナー フォームの中央
+   ClientWidth     =   9000
+   StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton btnHelp 
+      Caption         =   "ヘルプ"
+      Height          =   375
+      Left            =   7200
+      TabIndex        =   15
+      Top             =   5400
+      Width           =   1200
+   End
+   Begin VB.CommandButton btnCancel 
+      Caption         =   "中止"
+      Enabled         =   0   'False
+      Height          =   375
+      Left            =   5880
+      TabIndex        =   14
+      Top             =   5400
+      Width           =   1200
+   End
+   Begin VB.CommandButton btnExecute 
+      Caption         =   "データ取得開始"
+      Height          =   375
+      Left            =   4560
+      TabIndex        =   13
+      Top             =   5400
+      Width           =   1200
+   End
+   Begin VB.CommandButton btnSelectOutput 
+      Caption         =   "参照..."
+      Height          =   315
+      Left            =   7680
+      TabIndex        =   12
+      Top             =   4440
+      Width           =   855
+   End
+   Begin VB.TextBox txtOutputPath 
+      Height          =   315
+      Left            =   1800
+      TabIndex        =   11
+      Top             =   4440
+      Width           =   5760
+   End
+   Begin VB.ComboBox cmbTimeFrame 
+      Height          =   315
+      Left            =   1800
+      Style           =   2  'DropDown List
+      TabIndex        =   9
+      Top             =   3720
+      Width           =   2175
+   End
+   Begin MSComCtl2.DTPicker dtpEndDate 
+      Height          =   315
+      Left            =   5400
+      TabIndex        =   7
+      Top             =   3000
+      Width           =   1815
+      Format          =   "yyyy/MM/dd"
+      CurrentDate     =   44576
+   End
+   Begin MSComCtl2.DTPicker dtpStartDate 
+      Height          =   315
+      Left            =   1800
+      TabIndex        =   5
+      Top             =   3000
+      Width           =   1815
+      Format          =   "yyyy/MM/dd"
+      CurrentDate     =   44576
+   End
+   Begin VB.TextBox txtStockCodes 
+      Height          =   720
+      Left            =   1800
+      MultiLine       =   -1  'True
+      ScrollBars      =   2  'Vertical
+      TabIndex        =   3
+      Top             =   1800
+      Width           =   5760
+   End
+   Begin MSComctlLib.ProgressBar pgbProgress 
+      Height          =   255
+      Left            =   120
+      TabIndex        =   1
+      Top             =   5040
+      Width           =   8760
+      Appearance      =   1
+      Max             =   100
+      Scrolling       =   1
+   End
+   Begin VB.Label lblStatus 
+      Caption         =   "待機中"
+      Height          =   255
+      Left            =   120
+      TabIndex        =   16
+      Top             =   4800
+      Width           =   8760
+   End
+   Begin VB.Label Label6 
+      Caption         =   "出力先フォルダ:"
+      Height          =   255
+      Left            =   120
+      TabIndex        =   10
+      Top             =   4480
+      Width           =   1575
+   End
+   Begin VB.Label Label5 
+      Caption         =   "足種:"
+      Height          =   255
+      Left            =   120
+      TabIndex        =   8
+      Top             =   3760
+      Width           =   1575
+   End
+   Begin VB.Label Label4 
+      Caption         =   "終了日:"
+      Height          =   255
+      Left            =   4200
+      TabIndex        =   6
+      Top             =   3040
+      Width           =   975
+   End
+   Begin VB.Label Label3 
+      Caption         =   "開始日:"
+      Height          =   255
+      Left            =   120
+      TabIndex        =   4
+      Top             =   3040
+      Width           =   1575
+   End
+   Begin VB.Label Label2 
+      Caption         =   "銘柄コード:"
+      Height          =   255
+      Left            =   120
+      TabIndex        =   2
+      Top             =   1840
+      Width           =   1575
+   End
+   Begin VB.Label Label1 
+      Caption         =   "楽天証券MarketSpeed2のRSS APIを使用して株価データを取得し、CSV形式で出力します。"
+      Height          =   495
+      Left            =   120
+      TabIndex        =   0
+      Top             =   240
+      Width           =   8655
+   End
+   Begin VB.Label lblInstructions 
+      Caption         =   "銘柄コードをカンマ区切りで入力してください。例: 7203,6758,9984"
+      Height          =   375
+      Left            =   120
+      TabIndex        =   17
+      Top             =   1320
+      Width           =   8655
+   End
 End
 Attribute VB_Name = "MainForm"
 Attribute VB_GlobalNameSpace = False
