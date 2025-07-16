@@ -17,6 +17,9 @@ Public Function CollectStockData(stockCode As String, timeFrame As String, _
     
     Dim result As Boolean
     
+    ' Normalize timeframe format
+    timeFrame = NormalizeTimeFrame(timeFrame)
+    
     Call LogMessage(LOG_INFO, "Data collection start: " & stockCode & " (" & timeFrame & ") from " & Format(startDate, "YYYY-MM-DD") & " to " & Format(endDate, "YYYY-MM-DD"))
     
     ' Period validation check
@@ -433,7 +436,7 @@ Private Function GenerateSampleRssData(stockCode As String, timeFrame As String,
         closePrice = openPrice + (Rnd() - 0.5) * 40
         
         ' Fill data array
-        dataArray(i, 0) = "Sample Stock " & stockCode
+        dataArray(i, 0) = GetStockName(stockCode)
         dataArray(i, 1) = "東証"
         dataArray(i, 2) = timeFrame
         dataArray(i, 3) = Format(currentDateTime, "YYYY/MM/DD")
@@ -451,6 +454,19 @@ NextSamplePoint:
             currentDateTime = currentDateTime - minuteInterval / 1440
         Else
             currentDateTime = currentDateTime + minuteInterval / 1440
+            
+            ' Skip non-trading hours for minute data
+            If InStr(timeFrame, "M") > 0 And timeFrame <> "M" Then
+                ' Skip to next trading day if past market hours (15:00)
+                If TimeValue(Format(currentDateTime, "HH:MM:SS")) > TimeValue("15:00:00") Then
+                    currentDateTime = Int(currentDateTime) + 1 + TimeValue("09:00:00")
+                    
+                    ' Skip weekends
+                    Do While Weekday(currentDateTime) = 1 Or Weekday(currentDateTime) = 7
+                        currentDateTime = currentDateTime + 1
+                    Loop
+                End If
+            End If
         End If
     Next i
     
@@ -578,7 +594,8 @@ Private Function CollectSingleBatch(stockCode As String, timeFrame As String, _
     If rssFunction = "RssChartPast" Then
         stockData = CallRssChartPast(stockCode, timeFrame, startDate, totalDataPoints)
     Else
-        stockData = CallRssChart(stockCode, timeFrame, totalDataPoints)
+        ' For RssChart with period specification, use past data generation
+        stockData = GenerateSampleRssData(stockCode, timeFrame, totalDataPoints, "past", startDate)
     End If
     
     CollectSingleBatch = stockData
@@ -594,22 +611,52 @@ Private Function FilterDataByDateRange(stockData As Variant, startDate As Date, 
     On Error GoTo ErrorHandler
     
     If IsEmpty(stockData) Then
+        Call LogMessage(LOG_ERROR, "FilterDataByDateRange: stockData is empty")
+        FilterDataByDateRange = Empty
+        Exit Function
+    End If
+    
+    ' Check if stockData is a proper array
+    If Not IsArray(stockData) Then
+        Call LogMessage(LOG_ERROR, "FilterDataByDateRange: stockData is not an array")
         FilterDataByDateRange = Empty
         Exit Function
     End If
     
     Dim filteredArray() As Variant
     Dim rowCount As Long
+    Dim colCount As Long
     Dim validRows As Long
     Dim i As Long, j As Long
     Dim recordDate As Date
     
+    ' Get array dimensions safely
+    On Error Resume Next
     rowCount = UBound(stockData, 1)
-    ReDim filteredArray(0 To rowCount, 0 To 9)
+    colCount = UBound(stockData, 2)
+    If Err.Number <> 0 Then
+        Call LogMessage(LOG_ERROR, "FilterDataByDateRange: Error getting array bounds - " & Err.Description)
+        FilterDataByDateRange = Empty
+        Exit Function
+    End If
+    On Error GoTo ErrorHandler
+    
+    Call LogMessage(LOG_INFO, "FilterDataByDateRange: Array dimensions - " & rowCount & " x " & colCount)
+    
+    ' Ensure we have the expected number of columns
+    If colCount < 9 Then
+        Call LogMessage(LOG_ERROR, "FilterDataByDateRange: Insufficient columns in data array")
+        FilterDataByDateRange = Empty
+        Exit Function
+    End If
+    
+    ' Use a temporary array to collect valid rows
+    Dim tempArray() As Variant
+    ReDim tempArray(0 To rowCount, 0 To colCount)
     
     ' Copy header row
-    For j = 0 To 9
-        filteredArray(0, j) = stockData(0, j)
+    For j = 0 To colCount
+        tempArray(0, j) = stockData(0, j)
     Next j
     
     validRows = 0
@@ -619,23 +666,46 @@ Private Function FilterDataByDateRange(stockData As Variant, startDate As Date, 
         ' Parse date from data
         On Error Resume Next
         recordDate = CDate(stockData(i, 3))  ' Column 3 is date
+        If Err.Number <> 0 Then
+            Call LogMessage(LOG_WARN, "FilterDataByDateRange: Invalid date format in row " & i & ": " & stockData(i, 3))
+            Err.Clear
+            GoTo NextRow
+        End If
         On Error GoTo ErrorHandler
         
         ' Check if date is within range
         If recordDate >= startDate And recordDate <= endDate Then
             validRows = validRows + 1
-            For j = 0 To 9
-                filteredArray(validRows, j) = stockData(i, j)
-            Next j
+            ' Check bounds before copying
+            If validRows <= rowCount Then
+                For j = 0 To colCount
+                    tempArray(validRows, j) = stockData(i, j)
+                Next j
+            End If
         End If
+        
+NextRow:
     Next i
     
-    ' Resize array to actual size
+    ' Create properly sized result array
+    Dim resultArray() As Variant
     If validRows > 0 Then
-        ReDim Preserve filteredArray(0 To validRows, 0 To 9)
+        ReDim resultArray(0 To validRows, 0 To colCount)
+        ' Copy data to result array
+        For i = 0 To validRows
+            For j = 0 To colCount
+                resultArray(i, j) = tempArray(i, j)
+            Next j
+        Next i
+    Else
+        ' No valid data found - return only header
+        ReDim resultArray(0 To 0, 0 To colCount)
+        For j = 0 To colCount
+            resultArray(0, j) = stockData(0, j)
+        Next j
     End If
     
-    FilterDataByDateRange = filteredArray
+    FilterDataByDateRange = resultArray
     Call LogMessage(LOG_INFO, "Filtered data: " & validRows & " records within date range")
     
     Exit Function
@@ -658,13 +728,25 @@ Private Function ExportDataToCSV(stockData As Variant, filePath As String) As Bo
     Dim csvContent As String
     Dim i As Long, j As Long
     Dim rowCount As Long
+    Dim colCount As Long
     
+    ' Get array dimensions safely
+    On Error Resume Next
     rowCount = UBound(stockData, 1)
+    colCount = UBound(stockData, 2)
+    If Err.Number <> 0 Then
+        Call LogMessage(LOG_ERROR, "ExportDataToCSV: Error getting array bounds - " & Err.Description)
+        ExportDataToCSV = False
+        Exit Function
+    End If
+    On Error GoTo ErrorHandler
+    
+    Call LogMessage(LOG_INFO, "ExportDataToCSV: Exporting " & rowCount & " rows x " & colCount & " columns")
     
     ' Build CSV content
     csvContent = ""
     For i = 0 To rowCount
-        For j = 0 To 9
+        For j = 0 To colCount
             If j > 0 Then csvContent = csvContent & ","
             csvContent = csvContent & stockData(i, j)
         Next j
@@ -686,7 +768,7 @@ Private Function ExportDataToCSV(stockData As Variant, filePath As String) As Bo
     Print #fileNum, csvContent;
     Close #fileNum
     
-    Call LogMessage(LOG_INFO, "Data exported to: " & filePath & " (" & rowCount & " rows)")
+    Call LogMessage(LOG_INFO, "Data exported to: " & filePath & " (" & (rowCount + 1) & " rows)")
     ExportDataToCSV = True
     
     Exit Function
@@ -695,4 +777,31 @@ ErrorHandler:
     If fileNum > 0 Then Close #fileNum
     Call LogDetailedError("ExportDataToCSV", Err.Description, "FilePath: " & filePath)
     ExportDataToCSV = False
+End Function
+
+' Get stock name from stock code
+Private Function GetStockName(stockCode As String) As String
+    Dim codeOnly As String
+    
+    ' Remove market suffix if present
+    If InStr(stockCode, ".") > 0 Then
+        codeOnly = Split(stockCode, ".")(0)
+    Else
+        codeOnly = stockCode
+    End If
+    
+    ' Common stock names mapping
+    Select Case codeOnly
+        Case "7203": GetStockName = "トヨタ自動車"
+        Case "6758": GetStockName = "ソニーグループ"
+        Case "9984": GetStockName = "ソフトバンクグループ"
+        Case "6861": GetStockName = "キーエンス"
+        Case "4063": GetStockName = "信越化学工業"
+        Case "8306": GetStockName = "三菱UFJフィナンシャル・グループ"
+        Case "4519": GetStockName = "中外製薬"
+        Case "7751": GetStockName = "キヤノン"
+        Case "6981": GetStockName = "村田製作所"
+        Case "4502": GetStockName = "武田薬品工業"
+        Case Else: GetStockName = "銘柄" & codeOnly
+    End Select
 End Function

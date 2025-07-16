@@ -14,12 +14,14 @@ Public Const LOG_INFO As String = "INFO"
 Public Const LOG_WARN As String = "WARN"
 Public Const LOG_ERROR As String = "ERROR"
 
-' Log message output (simple version)
+' Log message output with file logging
 Public Sub LogMessage(level As String, message As String)
     On Error Resume Next
     
     Dim logLine As String
     Dim timestamp As String
+    Dim logFilePath As String
+    Dim fileNum As Integer
     
     ' Generate timestamp
     timestamp = Format(Now, "YYYY-MM-DD HH:MM:SS")
@@ -29,7 +31,46 @@ Public Sub LogMessage(level As String, message As String)
     
     ' Console output (Immediate Window)
     Debug.Print logLine
+    
+    ' File output
+    logFilePath = GetLogFilePath()
+    If logFilePath <> "" Then
+        fileNum = FreeFile
+        Open logFilePath For Append As #fileNum
+        Print #fileNum, logLine
+        Close #fileNum
+    End If
 End Sub
+
+' Get log file path with date
+Private Function GetLogFilePath() As String
+    On Error GoTo ErrorHandler
+    
+    Dim logDir As String
+    Dim logFileName As String
+    
+    logDir = ThisWorkbook.Path & "\output\logs\"
+    
+    ' Create log directory if it doesn't exist (without logging to avoid recursion)
+    If Dir(logDir, vbDirectory) = "" Then
+        ' Create parent directory first
+        Dim parentDir As String
+        parentDir = ThisWorkbook.Path & "\output\"
+        If Dir(parentDir, vbDirectory) = "" Then
+            MkDir parentDir
+        End If
+        MkDir logDir
+    End If
+    
+    ' Generate log filename with date
+    logFileName = "stock_data_collector_" & Format(Date, "YYYYMMDD") & ".log"
+    GetLogFilePath = logDir & logFileName
+    
+    Exit Function
+    
+ErrorHandler:
+    GetLogFilePath = ""
+End Function
 
 ' Directory existence check and creation (simple version)
 Public Function EnsureDirectoryExists(dirPath As String) As Boolean
@@ -37,14 +78,14 @@ Public Function EnsureDirectoryExists(dirPath As String) As Boolean
     
     If Dir(dirPath, vbDirectory) = "" Then
         MkDir dirPath
-        Call LogMessage(LOG_INFO, "Directory created: " & dirPath)
+        Debug.Print Format(Now, "YYYY-MM-DD HH:MM:SS") & " [INFO] Directory created: " & dirPath
     End If
     
     EnsureDirectoryExists = True
     Exit Function
     
 ErrorHandler:
-    Call LogMessage(LOG_ERROR, "Directory creation error: " & dirPath & " - " & Err.Description)
+    Debug.Print Format(Now, "YYYY-MM-DD HH:MM:SS") & " [ERROR] Directory creation error: " & dirPath & " - " & Err.Description
     EnsureDirectoryExists = False
 End Function
 
@@ -62,6 +103,37 @@ Public Sub LogDetailedError(functionName As String, errorDescription As String, 
     
     Call LogMessage(LOG_ERROR, errorMessage)
 End Sub
+
+' Normalize timeframe format (M5 -> 5M, etc.)
+Public Function NormalizeTimeFrame(timeFrame As String) As String
+    On Error GoTo ErrorHandler
+    
+    Dim normalizedTimeFrame As String
+    normalizedTimeFrame = UCase(Trim(timeFrame))
+    
+    ' Convert MX format to XM format
+    Select Case normalizedTimeFrame
+        Case "M1": normalizedTimeFrame = "1M"
+        Case "M5": normalizedTimeFrame = "5M"
+        Case "M15": normalizedTimeFrame = "15M"
+        Case "M30": normalizedTimeFrame = "30M"
+        Case "M60": normalizedTimeFrame = "60M"
+        Case "H1": normalizedTimeFrame = "60M"
+        Case "H2": normalizedTimeFrame = "120M"
+        Case "H4": normalizedTimeFrame = "240M"
+        Case "DAILY": normalizedTimeFrame = "D"
+        Case "WEEKLY": normalizedTimeFrame = "W"
+        Case "MONTHLY": normalizedTimeFrame = "M"
+        Case Else: normalizedTimeFrame = normalizedTimeFrame
+    End Select
+    
+    NormalizeTimeFrame = normalizedTimeFrame
+    Exit Function
+    
+ErrorHandler:
+    Call LogDetailedError("NormalizeTimeFrame", Err.Description, "TimeFrame: " & timeFrame)
+    NormalizeTimeFrame = timeFrame
+End Function
 
 ' Stock code validation
 Public Function ValidateStockCode(stockCode As String) As Boolean

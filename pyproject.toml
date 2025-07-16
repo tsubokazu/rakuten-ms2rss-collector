@@ -11,4 +11,5 @@ dependencies = [
 [tool.uv.workspace]
 members = [
     "tools/pdf-reader",
+    "tools/csv-visualizer",
 ]
