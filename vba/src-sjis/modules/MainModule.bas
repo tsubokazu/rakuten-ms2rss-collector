@@ -27,13 +27,20 @@ Public Sub ShowMainForm()
         Exit Sub
     End If
     
-    ' Show main form
-    Load MainForm
-    MainForm.Show vbModal
+    ' Simple message box interface instead of form
+    Dim stockCodes As String
+    Dim result As Boolean
     
-    ' Cleanup after form is closed
-    Unload MainForm
-    Set MainForm = Nothing
+    stockCodes = InputBox("Enter stock codes (comma separated):" & vbCrLf & "Example: 7203,6758,9984", "Stock Data Collector", "7203,6758,9984")
+    
+    If stockCodes <> "" Then
+        result = CollectMultipleStocks(stockCodes, "5M", Date - 1, Date)
+        If result Then
+            MsgBox "Data collection completed successfully!", vbInformation, "Success"
+        Else
+            MsgBox "Data collection failed. Check logs for details.", vbExclamation, "Error"
+        End If
+    End If
     
     Debug.Print "Application end"
     Exit Sub

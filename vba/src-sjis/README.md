@@ -16,11 +16,12 @@ This folder contains all VBA source code for the Rakuten MS2RSS Stock Data Colle
 | **DataCollector.bas** | Data collection engine | `CollectStockData()` |
 | **CSVExporter.bas** | CSV export functionality | `ExportStockDataToCSV()` |
 | **Utils.bas** | Utilities & logging | `LogMessage()`, `EnsureDirectoryExists()` |
+| **SimpleTest.bas** | Test functions | `TestBasic()`, `TestStockCollection()` |
 
 ### 📁 forms/ - User Forms
 | File | Purpose |
 |------|---------|
-| **MainForm.frm** | Main GUI form (simplified English version) |
+| ~~**MainForm.frm**~~ | Removed due to compatibility issues - using InputBox interface instead |
 
 ### 📁 classes/ - Class Modules
 | File | Purpose |
@@ -60,9 +61,7 @@ This folder contains all VBA source code for the Rakuten MS2RSS Stock Data Colle
    ```
 
 #### User Forms (.frm)
-1. Right-click in Project Explorer
-2. Select "Import File"
-3. Import `forms/MainForm.frm`
+**Note**: User forms have been removed to avoid compatibility issues. The system now uses simple InputBox interface instead.
 
 #### Class Modules (.cls) - Optional
 1. Right-click in Project Explorer
@@ -105,15 +104,23 @@ Assign the following macros to each button:
 
 ## Basic Usage
 
-### 1. Launch Application
+### 1. Basic Test
 ```vba
-' Show main form
+' Test basic VBA functionality
+Sub Test_Basic()
+    Call TestBasic
+End Sub
+```
+
+### 2. Launch Application
+```vba
+' Show main interface (InputBox based)
 Sub Test_ShowMainForm()
     Call ShowMainForm
 End Sub
 ```
 
-### 2. Run Quick Test
+### 3. Run Quick Test
 ```vba
 ' Test connection and data collection
 Sub Test_QuickTest()
@@ -121,7 +128,7 @@ Sub Test_QuickTest()
 End Sub
 ```
 
-### 3. Direct Program Execution
+### 4. Direct Program Execution
 ```vba
 Sub Test_DirectCall()
     Dim result As Boolean
