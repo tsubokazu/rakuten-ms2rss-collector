@@ -247,7 +247,7 @@ if 'stock_data' in st.session_state and st.session_state.collection_success:
         symbol_data = data[data['Symbol'] == selected_symbol].copy()
         
         if not symbol_data.empty:
-            # Create candlestick chart
+            # Create candlestick chart with proper time axis handling
             fig = make_subplots(
                 rows=2, cols=1,
                 shared_xaxes=True,
@@ -256,41 +256,89 @@ if 'stock_data' in st.session_state and st.session_state.collection_success:
                 row_width=[0.7, 0.3]
             )
             
-            # Add candlestick chart
+            # Convert datetime to string for proper sequencing (removes gaps)
+            symbol_data['DatetimeStr'] = symbol_data['Datetime'].dt.strftime('%Y-%m-%d %H:%M')
+            
+            # Add candlestick chart with Japanese stock market colors
             fig.add_trace(
                 go.Candlestick(
-                    x=symbol_data['Datetime'],
+                    x=symbol_data['DatetimeStr'],
                     open=symbol_data['Open'],
                     high=symbol_data['High'],
                     low=symbol_data['Low'],
                     close=symbol_data['Close'],
-                    name=selected_symbol
+                    name=selected_symbol,
+                    increasing_line_color='#ff4444',  # Red for up (Japanese style)
+                    decreasing_line_color='#4444ff',  # Blue for down (Japanese style)
+                    increasing_fillcolor='rgba(255, 68, 68, 0.8)',
+                    decreasing_fillcolor='rgba(68, 68, 255, 0.8)'
                 ),
                 row=1, col=1
             )
             
-            # Add volume chart
+            # Add volume chart with color coding based on price movement
+            colors = []
+            for i in range(len(symbol_data)):
+                if symbol_data.iloc[i]['Close'] >= symbol_data.iloc[i]['Open']:
+                    colors.append('rgba(255, 68, 68, 0.7)')  # Red for up
+                else:
+                    colors.append('rgba(68, 68, 255, 0.7)')  # Blue for down
+            
             fig.add_trace(
                 go.Bar(
-                    x=symbol_data['Datetime'],
+                    x=symbol_data['DatetimeStr'],
                     y=symbol_data['Volume'],
                     name='出来高',
-                    marker_color='rgba(158,202,225,0.8)'
+                    marker_color=colors
                 ),
                 row=2, col=1
             )
             
-            # Update layout
+            # Configure layout for stock chart style
             fig.update_layout(
                 title=f'{selected_symbol} - {selected_interval}',
                 xaxis_rangeslider_visible=False,
                 height=600,
-                showlegend=False
+                showlegend=False,
+                # Chart background and styling
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                # Remove gaps in time axis
+                xaxis=dict(
+                    type='category',  # This removes time gaps
+                    tickmode='linear',
+                    tick0=0,
+                    dtick=max(1, len(symbol_data) // 10),  # Show ~10 ticks
+                    showgrid=True,
+                    gridcolor='rgba(128,128,128,0.2)',
+                    zeroline=False
+                ),
+                xaxis2=dict(
+                    type='category',
+                    tickmode='linear',
+                    tick0=0,
+                    dtick=max(1, len(symbol_data) // 10),
+                    showgrid=True,
+                    gridcolor='rgba(128,128,128,0.2)',
+                    zeroline=False
+                )
             )
             
-            # Update axes
-            fig.update_yaxes(title_text="価格 (円)", row=1, col=1)
-            fig.update_yaxes(title_text="出来高", row=2, col=1)
+            # Update y-axes with grid
+            fig.update_yaxes(
+                title_text="価格 (円)", 
+                row=1, col=1,
+                showgrid=True,
+                gridcolor='rgba(128,128,128,0.2)',
+                zeroline=False
+            )
+            fig.update_yaxes(
+                title_text="出来高", 
+                row=2, col=1,
+                showgrid=True,
+                gridcolor='rgba(128,128,128,0.2)',
+                zeroline=False
+            )
             fig.update_xaxes(title_text="時間", row=2, col=1)
             
             st.plotly_chart(fig, use_container_width=True)
