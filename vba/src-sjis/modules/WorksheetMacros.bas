@@ -95,7 +95,7 @@ Public Sub StartDataCollection()
         If timeFrame = "" Then timeFrame = "5M"  ' Default to 5 minutes
         
         Debug.Print "Data collection started for: " & stockCodes & " (" & timeFrame & ") from " & Format(startDate, "YYYY/MM/DD") & " to " & Format(endDate, "YYYY/MM/DD")
-        result = CollectMultipleStocks(stockCodes, timeFrame, startDate, endDate)
+        result = CollectMultipleStocksYahoo(stockCodes, timeFrame, startDate, endDate)
         
         If result Then
             MsgBox "Data collection completed successfully!" & vbCrLf & _
@@ -136,7 +136,7 @@ Public Sub RunQuickTest()
     Debug.Print "Quick test start: " & testStockCode
     
     ' Test basic data collection
-    result = CollectStockData(testStockCode, "5M", Date - 1, Date)
+    result = CollectStockDataYahoo(testStockCode, "5M", Date - 1, Date)
     
     If result Then
         MsgBox "Quick test success!" & vbCrLf & _
@@ -163,11 +163,11 @@ Public Sub AboutApp()
     ' Direct implementation to avoid macro security issues
     Dim aboutMessage As String
     
-    aboutMessage = "Rakuten MS2RSS Stock Data Collector" & vbCrLf & vbCrLf
-    aboutMessage = aboutMessage & "Version: 1.0.0" & vbCrLf
-    aboutMessage = aboutMessage & "Build Date: 2025-01-16" & vbCrLf & vbCrLf
-    aboutMessage = aboutMessage & "Uses Rakuten Securities MarketSpeed2 RSS API" & vbCrLf
-    aboutMessage = aboutMessage & "to collect stock data and output as CSV format." & vbCrLf & vbCrLf
+    aboutMessage = "Stock Data Collector with Yahoo Finance API" & vbCrLf & vbCrLf
+    aboutMessage = aboutMessage & "Version: 2.0.0" & vbCrLf
+    aboutMessage = aboutMessage & "Build Date: 2025-07-18" & vbCrLf & vbCrLf
+    aboutMessage = aboutMessage & "Uses Yahoo Finance API" & vbCrLf
+    aboutMessage = aboutMessage & "to collect Japanese stock data and output as CSV format." & vbCrLf & vbCrLf
     aboutMessage = aboutMessage & "Created with Claude Code"
     
     MsgBox aboutMessage, vbInformation, "About This Application"
@@ -258,13 +258,13 @@ Public Sub TestConnection()
     ' Test basic functionality
     Debug.Print "Testing basic Excel functionality..."
     
-    ' Since RSS functions require MarketSpeed2, show information message instead
+    ' Test Yahoo Finance API connection
     MsgBox "Connection Test Information:" & vbCrLf & vbCrLf & _
-           "To use MarketSpeed2 RSS functions, please ensure:" & vbCrLf & _
-           "1. MarketSpeed2 is installed and running" & vbCrLf & _
-           "2. RSS function is enabled in MarketSpeed2 settings" & vbCrLf & _
-           "3. You are logged in to MarketSpeed2" & vbCrLf & _
-           "4. RSS Add-in is installed in Excel" & vbCrLf & vbCrLf & _
+           "To use Yahoo Finance API, please ensure:" & vbCrLf & _
+           "1. Python environment is properly configured" & vbCrLf & _
+           "2. Yahoo Finance client is installed" & vbCrLf & _
+           "3. Internet connection is available" & vbCrLf & _
+           "4. Virtual environment is activated" & vbCrLf & vbCrLf & _
            "VBA System: OK" & vbCrLf & _
            "Excel Version: " & Application.Version, vbInformation, "Connection Test Result"
     
@@ -281,20 +281,21 @@ End Sub
 Public Sub ShowHelp()
     Dim helpMessage As String
     
-    helpMessage = "Rakuten MS2RSS Stock Data Collector Help" & vbCrLf & vbCrLf
+    helpMessage = "Stock Data Collector with Yahoo Finance API Help" & vbCrLf & vbCrLf
     helpMessage = helpMessage & "Basic Usage:" & vbCrLf
     helpMessage = helpMessage & "1. Click 'Start Data Collection' button" & vbCrLf
     helpMessage = helpMessage & "2. Enter stock codes (e.g. 7203,6758,9984)" & vbCrLf
-    helpMessage = helpMessage & "3. Click 'Execute' button to start data collection" & vbCrLf & vbCrLf
+    helpMessage = helpMessage & "3. Enter date range and timeframe" & vbCrLf
+    helpMessage = helpMessage & "4. Data will be collected automatically" & vbCrLf & vbCrLf
     helpMessage = helpMessage & "Stock Code Format:" & vbCrLf
     helpMessage = helpMessage & "- Single stock: 7203" & vbCrLf
     helpMessage = helpMessage & "- Multiple stocks: 7203,6758,9984" & vbCrLf
-    helpMessage = helpMessage & "- Market specific: 7203.T, 7203.JAX" & vbCrLf & vbCrLf
+    helpMessage = helpMessage & "- Japanese stocks: Auto-adds .T suffix" & vbCrLf & vbCrLf
     helpMessage = helpMessage & "Supported Timeframes:" & vbCrLf
-    helpMessage = helpMessage & "1M, 5M, 15M, 30M, 60M, D (Daily)" & vbCrLf & vbCrLf
+    helpMessage = helpMessage & "1M (1 min), 5M (5 min), 15M, 30M, 60M, D (Daily)" & vbCrLf & vbCrLf
     helpMessage = helpMessage & "Notes:" & vbCrLf
-    helpMessage = helpMessage & "- MarketSpeed2 must be running" & vbCrLf
-    helpMessage = helpMessage & "- RSS function must be enabled" & vbCrLf
+    helpMessage = helpMessage & "- Internet connection required" & vbCrLf
+    helpMessage = helpMessage & "- Python environment must be configured" & vbCrLf
     helpMessage = helpMessage & "- Large data collection may take time"
     
     MsgBox helpMessage, vbInformation, "Help"
@@ -309,8 +310,8 @@ Public Sub ShowSystemInfo()
     info = info & "OS: " & Application.OperatingSystem & vbCrLf
     info = info & "User: " & Application.UserName & vbCrLf
     info = info & "Current Time: " & Format(Now, "YYYY-MM-DD HH:MM:SS") & vbCrLf & vbCrLf
-    info = info & "Rakuten MS2RSS Stock Data Collector" & vbCrLf
-    info = info & "Version: 1.0.0"
+    info = info & "Stock Data Collector with Yahoo Finance API" & vbCrLf
+    info = info & "Version: 2.0.0"
     
     MsgBox info, vbInformation, "System Information"
 End Sub
