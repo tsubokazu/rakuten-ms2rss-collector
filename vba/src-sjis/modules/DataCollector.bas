@@ -22,6 +22,14 @@ Public Function CollectStockData(stockCode As String, timeFrame As String, _
     
     Call LogMessage(LOG_INFO, "Data collection start: " & stockCode & " (" & timeFrame & ") from " & Format(startDate, "YYYY-MM-DD") & " to " & Format(endDate, "YYYY-MM-DD"))
     
+    ' Environment information
+    Call LogMessage(LOG_INFO, "Environment check:")
+    Call LogMessage(LOG_INFO, "  Excel Version: " & Application.Version)
+    Call LogMessage(LOG_INFO, "  Operating System: " & Application.OperatingSystem)
+    Call LogMessage(LOG_INFO, "  User Name: " & Application.UserName)
+    Call LogMessage(LOG_INFO, "  Current Time: " & Format(Now, "YYYY-MM-DD HH:MM:SS"))
+    Call LogMessage(LOG_INFO, "  Workbook Path: " & ThisWorkbook.Path)
+    
     ' Period validation check
     If startDate > endDate Then
         Call LogMessage(LOG_ERROR, "Start date is later than end date")
@@ -333,49 +341,125 @@ End Function
 Private Function CallRssChart(stockCode As String, timeFrame As String, dataPoints As Long) As Variant
     On Error GoTo ErrorHandler
     
-    ' Test mode: Return sample data instead of actual RSS API call
-    If True Then  ' Set to False for production mode
-        CallRssChart = GenerateSampleRssData(stockCode, timeFrame, dataPoints, "latest")
+    ' Detailed logging before API call
+    Call LogMessage(LOG_INFO, "CallRssChart: Starting RSS API call")
+    Call LogMessage(LOG_INFO, "  Stock Code: " & stockCode)
+    Call LogMessage(LOG_INFO, "  TimeFrame: " & timeFrame)
+    Call LogMessage(LOG_INFO, "  Data Points: " & dataPoints)
+    Call LogMessage(LOG_INFO, "  Excel Version: " & Application.Version)
+    
+    ' Check if RSS function is available
+    Dim testResult As Variant
+    On Error Resume Next
+    testResult = Application.WorksheetFunction.RssChart("", "9999", "5M", 1)
+    If Err.Number <> 0 Then
+        Call LogMessage(LOG_ERROR, "RssChart function is not available. Error: " & Err.Description)
+        Call LogMessage(LOG_ERROR, "MarketSpeed2 RSS Setup Required:")
+        Call LogMessage(LOG_ERROR, "  1. Start MarketSpeed2 application")
+        Call LogMessage(LOG_ERROR, "  2. Login to your account")
+        Call LogMessage(LOG_ERROR, "  3. Enable RSS function in Settings")
+        Call LogMessage(LOG_ERROR, "  4. Install RSS Add-in for Excel")
+        Call LogMessage(LOG_WARN, "Switching to fallback mode with sample data")
+        On Error GoTo ErrorHandler
+        
+        ' Fallback to sample data generation
+        CallRssChart = GenerateFallbackData(stockCode, timeFrame, dataPoints, "latest")
         Exit Function
     End If
+    On Error GoTo ErrorHandler
     
-    ' Production mode: Actual RSS API call
-    ' TODO: Implement actual RssChart call
-    ' CallRssChart = Application.WorksheetFunction.RssChart("", stockCode, timeFrame, dataPoints)
+    ' Actual RSS API call
+    Call LogMessage(LOG_INFO, "CallRssChart: Executing RSS API call...")
+    CallRssChart = Application.WorksheetFunction.RssChart("", stockCode, timeFrame, dataPoints)
+    
+    ' Check result
+    If IsEmpty(CallRssChart) Then
+        Call LogMessage(LOG_ERROR, "CallRssChart: Returned empty result")
+    Else
+        If IsArray(CallRssChart) Then
+            Call LogMessage(LOG_INFO, "CallRssChart: Success - returned array with " & (UBound(CallRssChart, 1) + 1) & " rows")
+        Else
+            Call LogMessage(LOG_WARN, "CallRssChart: Returned non-array result: " & CallRssChart)
+        End If
+    End If
     
     Exit Function
     
 ErrorHandler:
-    Call LogDetailedError("CallRssChart", Err.Description, "Stock: " & stockCode & ", TimeFrame: " & timeFrame)
+    Call LogMessage(LOG_ERROR, "CallRssChart: Error occurred")
+    Call LogMessage(LOG_ERROR, "  Error Number: " & Err.Number)
+    Call LogMessage(LOG_ERROR, "  Error Description: " & Err.Description)
+    Call LogMessage(LOG_ERROR, "  Error Source: " & Err.Source)
+    Call LogDetailedError("CallRssChart", Err.Description, "Stock: " & stockCode & ", TimeFrame: " & timeFrame & ", Points: " & dataPoints)
     CallRssChart = Empty
 End Function
 
 Private Function CallRssChartPast(stockCode As String, timeFrame As String, startDate As Date, dataPoints As Long) As Variant
     On Error GoTo ErrorHandler
     
-    ' Test mode: Return sample data instead of actual RSS API call
-    If True Then  ' Set to False for production mode
-        CallRssChartPast = GenerateSampleRssData(stockCode, timeFrame, dataPoints, "past", startDate)
+    ' Detailed logging before API call
+    Dim startDateStr As String
+    startDateStr = Format(startDate, "YYYYMMDD")
+    
+    Call LogMessage(LOG_INFO, "CallRssChartPast: Starting RSS API call")
+    Call LogMessage(LOG_INFO, "  Stock Code: " & stockCode)
+    Call LogMessage(LOG_INFO, "  TimeFrame: " & timeFrame)
+    Call LogMessage(LOG_INFO, "  Start Date: " & startDateStr & " (" & Format(startDate, "YYYY-MM-DD") & ")")
+    Call LogMessage(LOG_INFO, "  Data Points: " & dataPoints)
+    Call LogMessage(LOG_INFO, "  Excel Version: " & Application.Version)
+    
+    ' Check if RssChartPast function is available
+    Dim testResult As Variant
+    On Error Resume Next
+    testResult = Application.WorksheetFunction.RssChartPast("", "9999", "D", "20250101", 1)
+    If Err.Number <> 0 Then
+        Call LogMessage(LOG_ERROR, "RssChartPast function is not available. Error: " & Err.Description)
+        Call LogMessage(LOG_ERROR, "MarketSpeed2 RSS Setup Required:")
+        Call LogMessage(LOG_ERROR, "  1. Start MarketSpeed2 application")
+        Call LogMessage(LOG_ERROR, "  2. Login to your account")
+        Call LogMessage(LOG_ERROR, "  3. Enable RSS function in Settings")
+        Call LogMessage(LOG_ERROR, "  4. Install RSS Add-in for Excel")
+        Call LogMessage(LOG_WARN, "Switching to fallback mode with sample data")
+        On Error GoTo ErrorHandler
+        
+        ' Fallback to sample data generation
+        CallRssChartPast = GenerateFallbackData(stockCode, timeFrame, dataPoints, "past", startDate)
         Exit Function
     End If
+    On Error GoTo ErrorHandler
     
-    ' Production mode: Actual RSS API call
-    ' TODO: Implement actual RssChartPast call
-    ' Dim startDateStr As String
-    ' startDateStr = Format(startDate, "YYYYMMDD")
-    ' CallRssChartPast = Application.WorksheetFunction.RssChartPast("", stockCode, timeFrame, startDateStr, dataPoints)
+    ' Actual RSS API call
+    Call LogMessage(LOG_INFO, "CallRssChartPast: Executing RSS API call...")
+    CallRssChartPast = Application.WorksheetFunction.RssChartPast("", stockCode, timeFrame, startDateStr, dataPoints)
+    
+    ' Check result
+    If IsEmpty(CallRssChartPast) Then
+        Call LogMessage(LOG_ERROR, "CallRssChartPast: Returned empty result")
+    Else
+        If IsArray(CallRssChartPast) Then
+            Call LogMessage(LOG_INFO, "CallRssChartPast: Success - returned array with " & (UBound(CallRssChartPast, 1) + 1) & " rows")
+        Else
+            Call LogMessage(LOG_WARN, "CallRssChartPast: Returned non-array result: " & CallRssChartPast)
+        End If
+    End If
     
     Exit Function
     
 ErrorHandler:
-    Call LogDetailedError("CallRssChartPast", Err.Description, "Stock: " & stockCode & ", TimeFrame: " & timeFrame)
+    Call LogMessage(LOG_ERROR, "CallRssChartPast: Error occurred")
+    Call LogMessage(LOG_ERROR, "  Error Number: " & Err.Number)
+    Call LogMessage(LOG_ERROR, "  Error Description: " & Err.Description)
+    Call LogMessage(LOG_ERROR, "  Error Source: " & Err.Source)
+    Call LogDetailedError("CallRssChartPast", Err.Description, "Stock: " & stockCode & ", TimeFrame: " & timeFrame & ", StartDate: " & startDateStr)
     CallRssChartPast = Empty
 End Function
 
-' Generate sample RSS data for testing
-Private Function GenerateSampleRssData(stockCode As String, timeFrame As String, dataPoints As Long, _
-                                     dataType As String, Optional startDate As Date) As Variant
+' Generate fallback data when RSS API is not available
+Private Function GenerateFallbackData(stockCode As String, timeFrame As String, dataPoints As Long, _
+                                    dataType As String, Optional startDate As Date) As Variant
     On Error GoTo ErrorHandler
+    
+    Call LogMessage(LOG_INFO, "GenerateFallbackData: Creating sample data for testing")
     
     Dim dataArray() As Variant
     Dim i As Long
@@ -406,8 +490,8 @@ Private Function GenerateSampleRssData(stockCode As String, timeFrame As String,
         Case "30M": minuteInterval = 30
         Case "60M": minuteInterval = 60
         Case "D": minuteInterval = 1440
-        Case "W": minuteInterval = 10080  ' 7 days
-        Case "M": minuteInterval = 43200  ' 30 days
+        Case "W": minuteInterval = 10080
+        Case "M": minuteInterval = 43200
         Case Else: minuteInterval = 5
     End Select
     
@@ -425,10 +509,10 @@ Private Function GenerateSampleRssData(stockCode As String, timeFrame As String,
         ' Skip weekends for daily data
         If timeFrame = "D" And (Weekday(currentDateTime) = 1 Or Weekday(currentDateTime) = 7) Then
             currentDateTime = currentDateTime + minuteInterval / 1440
-            GoTo NextSamplePoint
+            GoTo NextFallbackPoint
         End If
         
-        ' Generate sample OHLCV data
+        ' Generate realistic OHLCV data
         Dim openPrice As Double, highPrice As Double, lowPrice As Double, closePrice As Double
         openPrice = basePrice + (Rnd() - 0.5) * 50
         highPrice = openPrice + Rnd() * 30
@@ -449,7 +533,7 @@ Private Function GenerateSampleRssData(stockCode As String, timeFrame As String,
         
         basePrice = closePrice + (Rnd() - 0.5) * 10
         
-NextSamplePoint:
+NextFallbackPoint:
         If dataType = "latest" Then
             currentDateTime = currentDateTime - minuteInterval / 1440
         Else
@@ -457,11 +541,8 @@ NextSamplePoint:
             
             ' Skip non-trading hours for minute data
             If InStr(timeFrame, "M") > 0 And timeFrame <> "M" Then
-                ' Skip to next trading day if past market hours (15:00)
                 If TimeValue(Format(currentDateTime, "HH:MM:SS")) > TimeValue("15:00:00") Then
                     currentDateTime = Int(currentDateTime) + 1 + TimeValue("09:00:00")
-                    
-                    ' Skip weekends
                     Do While Weekday(currentDateTime) = 1 Or Weekday(currentDateTime) = 7
                         currentDateTime = currentDateTime + 1
                     Loop
@@ -470,12 +551,14 @@ NextSamplePoint:
         End If
     Next i
     
-    GenerateSampleRssData = dataArray
+    GenerateFallbackData = dataArray
+    Call LogMessage(LOG_INFO, "GenerateFallbackData: Generated " & dataPoints & " sample records")
+    
     Exit Function
     
 ErrorHandler:
-    Call LogDetailedError("GenerateSampleRssData", Err.Description)
-    GenerateSampleRssData = Empty
+    Call LogDetailedError("GenerateFallbackData", Err.Description)
+    GenerateFallbackData = Empty
 End Function
 
 ' Collect data in batches to handle 3000-point limit
@@ -495,9 +578,9 @@ Private Function CollectDataInBatches(stockCode As String, timeFrame As String, 
     
     maxBatchSize = 3000
     batchCount = CalculateBatchCount(totalDataPoints, maxBatchSize)
-    rssFunction = GetRSSFunctionType(timeFrame)
+    rssFunction = GetRSSFunctionType(timeFrame, False)  ' False = period-based (not real-time)
     
-    Call LogMessage(LOG_INFO, "Starting batch collection: " & batchCount & " batches for " & totalDataPoints & " points")
+    Call LogMessage(LOG_INFO, "Starting batch collection: " & batchCount & " batches for " & totalDataPoints & " points using " & rssFunction)
     
     ' Initialize result array
     Dim totalRows As Long
@@ -519,10 +602,11 @@ Private Function CollectDataInBatches(stockCode As String, timeFrame As String, 
         
         Call LogMessage(LOG_INFO, "Processing batch " & i & "/" & batchCount & " (size: " & batchSize & ")")
         
-        ' Get batch data
+        ' Get batch data using appropriate RSS function
         If rssFunction = "RssChartPast" Then
             batchData = CallRssChartPast(stockCode, timeFrame, currentStartDate, batchSize)
         Else
+            ' For minute data, use RssChart (latest N points)
             batchData = CallRssChart(stockCode, timeFrame, batchSize)
         End If
         
@@ -546,8 +630,8 @@ Private Function CollectDataInBatches(stockCode As String, timeFrame As String, 
             End If
         Next j
         
-        ' Update start date for next batch (for RssChartPast)
-        If rssFunction = "RssChartPast" And i < batchCount Then
+        ' Update start date for next batch
+        If i < batchCount Then
             ' Calculate next start date based on last data point
             currentStartDate = currentStartDate + (batchSize * GetTimeIntervalInDays(timeFrame))
         End If
@@ -587,15 +671,18 @@ Private Function CollectSingleBatch(stockCode As String, timeFrame As String, _
     Dim rssFunction As String
     Dim stockData As Variant
     
-    rssFunction = GetRSSFunctionType(timeFrame)
+    ' Determine appropriate RSS function based on timeframe capabilities
+    rssFunction = GetRSSFunctionType(timeFrame, False)  ' False = period-based (not real-time)
     
-    Call LogMessage(LOG_INFO, "Single batch collection using " & rssFunction)
+    Call LogMessage(LOG_INFO, "Single batch collection using " & rssFunction & " for period-based data")
     
+    ' Use appropriate RSS function based on timeframe
     If rssFunction = "RssChartPast" Then
         stockData = CallRssChartPast(stockCode, timeFrame, startDate, totalDataPoints)
     Else
-        ' For RssChart with period specification, use past data generation
-        stockData = GenerateSampleRssData(stockCode, timeFrame, totalDataPoints, "past", startDate)
+        ' For minute data, use RssChart (latest N points) then filter by date
+        Call LogMessage(LOG_WARN, "Using RssChart for minute data - period filtering will be applied")
+        stockData = CallRssChart(stockCode, timeFrame, totalDataPoints)
     End If
     
     CollectSingleBatch = stockData
@@ -642,6 +729,20 @@ Private Function FilterDataByDateRange(stockData As Variant, startDate As Date, 
     On Error GoTo ErrorHandler
     
     Call LogMessage(LOG_INFO, "FilterDataByDateRange: Array dimensions - " & rowCount & " x " & colCount)
+    Call LogMessage(LOG_INFO, "FilterDataByDateRange: Target period - " & Format(startDate, "YYYY-MM-DD") & " to " & Format(endDate, "YYYY-MM-DD"))
+    
+    ' Log first few rows for debugging
+    If rowCount > 0 Then
+        Call LogMessage(LOG_INFO, "FilterDataByDateRange: Sample data (first 3 rows):")
+        For i = 0 To Application.WorksheetFunction.Min(2, rowCount)
+            Dim sampleRow As String
+            sampleRow = "  Row " & i & ": "
+            For j = 0 To Application.WorksheetFunction.Min(4, colCount)  ' First 5 columns
+                sampleRow = sampleRow & stockData(i, j) & " | "
+            Next j
+            Call LogMessage(LOG_INFO, sampleRow)
+        Next i
+    End If
     
     ' Ensure we have the expected number of columns
     If colCount < 9 Then

@@ -14,6 +14,7 @@ Public Const LOG_INFO As String = "INFO"
 Public Const LOG_WARN As String = "WARN"
 Public Const LOG_ERROR As String = "ERROR"
 
+
 ' Log message output with file logging
 Public Sub LogMessage(level As String, message As String)
     On Error Resume Next
@@ -240,17 +241,22 @@ ErrorHandler:
     CalculateBusinessDays = 0
 End Function
 
-' Determine which RSS function to use based on timeframe
-Public Function GetRSSFunctionType(timeFrame As String) As String
+' Determine which RSS function to use based on timeframe capabilities
+Public Function GetRSSFunctionType(timeFrame As String, isRealTime As Boolean) As String
     On Error GoTo ErrorHandler
     
+    ' RssChartPast is only available for daily and above timeframes
     Select Case UCase(timeFrame)
-        Case "1M", "5M", "15M", "30M", "60M"
-            GetRSSFunctionType = "RssChart"  ' For minute data
         Case "D", "W", "M"
-            GetRSSFunctionType = "RssChartPast"  ' For daily and above
+            If Not isRealTime Then
+                GetRSSFunctionType = "RssChartPast"  ' For daily+ with period specification
+            Else
+                GetRSSFunctionType = "RssChart"      ' For daily+ real-time
+            End If
+        Case "1M", "5M", "15M", "30M", "60M"
+            GetRSSFunctionType = "RssChart"          ' For minute data (RssChartPast not supported)
         Case Else
-            GetRSSFunctionType = "RssChart"  ' Default
+            GetRSSFunctionType = "RssChart"          ' Default
     End Select
     
     Exit Function
