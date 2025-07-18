@@ -13,7 +13,8 @@ import time
 from typing import List, Dict, Any
 import logging
 
-from .client import YahooFinanceClient
+# Direct import to avoid relative import issues
+import yfinance as yf
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -149,8 +150,29 @@ if st.sidebar.button("📥 データ収集開始", type="primary"):
         else:
             processed_symbols.append(symbol)
     
-    # Initialize client
-    client = YahooFinanceClient()
+    # Initialize Yahoo Finance client (direct implementation)
+    class SimpleYahooFinanceClient:
+        def get_stock_data(self, symbol, interval, start_date, end_date):
+            try:
+                ticker = yf.Ticker(symbol)
+                data = ticker.history(start=start_date, end=end_date, interval=interval)
+                if data.empty:
+                    return pd.DataFrame()
+                
+                # Reset index and add symbol column
+                data = data.reset_index()
+                data['Symbol'] = symbol
+                
+                # Reorder columns
+                columns = ['Symbol', 'Datetime', 'Open', 'High', 'Low', 'Close', 'Volume', 'Dividends', 'Stock Splits']
+                data = data.reindex(columns=columns)
+                
+                return data
+            except Exception as e:
+                logger.error(f"Error retrieving data for {symbol}: {e}")
+                return pd.DataFrame()
+    
+    client = SimpleYahooFinanceClient()
     
     # Create progress bar
     progress_bar = st.progress(0)
